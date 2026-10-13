@@ -1,0 +1,1159 @@
+# Eval set for the Windows settings router.
+# q       = query as typed by a user (not copied from the catalog)
+# expect  = acceptable action ids, best first; [] means nothing in the catalog should match
+# style   = symptom | goal | slang | typo | question | indirect | hinglish
+
+# ───────────────── Network ─────────────────
+
+[[case]]
+q = "my laptop won't see my home wifi anymore"
+expect = ["wifi", "network-troubleshoot"]
+style = "symptom"
+
+
+[[case]]
+q = "wifi chal nahi raha laptop me"
+expect = ["wifi", "network-troubleshoot"]
+style = "hinglish"
+
+
+[[case]]
+q = "wifi keeps disconnecting every few minutes"
+expect = ["wifi", "network-troubleshoot"]
+style = "symptom"
+
+
+[[case]]
+q = "conection keeps failing with the router"
+expect = ["wifi", "network-troubleshoot"]
+style = "typo"
+
+
+[[case]]
+q = "netwrok keeps droping when im in the bedroom"
+expect = ["wifi", "network-status"]
+style = "typo"
+
+
+[[case]]
+q = "net is super slow since morning, videos keep buffering"
+expect = ["network-troubleshoot", "network-status"]
+style = "symptom"
+
+
+[[case]]
+q = "internet slow hai, kya karun"
+expect = ["network-troubleshoot", "network-status"]
+style = "hinglish"
+
+
+[[case]]
+q = "websites not opening but whatsapp works fine"
+expect = ["flush-dns", "network-troubleshoot"]
+style = "indirect"
+
+
+[[case]]
+q = "google loads as an error page while my wifi bars look full"
+expect = ["flush-dns", "network-troubleshoot"]
+style = "indirect"
+
+
+[[case]]
+q = "my office vpn drops every hour"
+expect = ["vpn"]
+style = "symptom"
+
+
+[[case]]
+q = "I need to reach my office servers from home safely"
+expect = ["vpn"]
+style = "goal"
+
+
+[[case]]
+q = "my phone wants to use this laptop's internet, how"
+expect = ["hotspot"]
+style = "goal"
+
+
+[[case]]
+q = "let my tablet borrow the laptop's connection"
+expect = ["hotspot"]
+style = "indirect"
+
+
+[[case]]
+q = "hotspot option grey hai"
+expect = ["hotspot", "airplane-mode"]
+style = "hinglish"
+
+
+[[case]]
+q = "LAN wire lagaya lekin internet nahi"
+expect = ["ethernet", "network-troubleshoot"]
+style = "hinglish"
+
+
+[[case]]
+q = "the cable from the router is in but laptop shows no connection"
+expect = ["ethernet", "network-status"]
+style = "indirect"
+
+
+[[case]]
+q = "wifi icon is grey and it says flight mode"
+expect = ["airplane-mode"]
+style = "indirect"
+
+
+[[case]]
+q = "every wireless thing is dead, can't even use bluetooth"
+expect = ["airplane-mode", "bluetooth"]
+style = "indirect"
+
+
+[[case]]
+q = "how do I check the address my router gave my laptop"
+expect = ["ipconfig"]
+style = "question"
+
+
+[[case]]
+q = "laptop got an ip starting with 169.254"
+expect = ["ipconfig", "network-connections"]
+style = "symptom"
+
+
+[[case]]
+q = "IP conflict popup keeps coming up"
+expect = ["ipconfig", "network-connections"]
+style = "symptom"
+
+
+[[case]]
+q = "need the same local address every time for my printer"
+expect = ["network-connections"]
+style = "goal"
+
+
+[[case]]
+q = "switch the dns to 1.1.1.1"
+expect = ["network-connections", "flush-dns"]
+style = "goal"
+
+
+[[case]]
+q = "reset everything about networking, nothing works"
+expect = ["network-reset"]
+style = "goal"
+
+
+[[case]]
+q = "I changed the wifi password but laptop still uses the old one"
+expect = ["known-networks", "wifi"]
+style = "symptom"
+
+
+[[case]]
+q = "laptop keeps joining a cafe network by itself"
+expect = ["known-networks"]
+style = "symptom"
+
+
+[[case]]
+q = "delete old hotel wifi from my laptop"
+expect = ["known-networks"]
+style = "goal"
+
+
+[[case]]
+q = "pc drops the internet at random every couple of minutes"
+expect = ["ping-test", "network-troubleshoot"]
+style = "symptom"
+
+
+[[case]]
+q = "is my internet even alive right now"
+expect = ["network-status", "ping-test"]
+style = "question"
+
+
+[[case]]
+q = "router lights are green but nothing opens on laptop"
+expect = ["network-status", "network-troubleshoot"]
+style = "indirect"
+
+
+[[case]]
+q = "windows is stopping zoom from connecting to the internet"
+expect = ["firewall", "network-troubleshoot"]
+style = "indirect"
+
+
+[[case]]
+q = "I think the firewall stops my printer from being found"
+expect = ["firewall", "printers"]
+style = "symptom"
+
+
+[[case]]
+q = "some proxy is set and sites refuse to load"
+expect = ["proxy"]
+style = "symptom"
+
+
+[[case]]
+q = "mark my wifi as metered so updates stop eating data"
+expect = ["wifi", "network-status"]
+style = "goal"
+
+
+[[case]]
+q = "ethernet ka adapter kaam nahi kar raha"
+expect = ["ethernet", "device-manager"]
+style = "hinglish"
+
+
+[[case]]
+q = "wifi wont connect, been trying for an hour"
+expect = ["wifi", "network-troubleshoot"]
+style = "typo"
+
+
+[[case]]
+q = "hotspt from my laptop not working for my phone"
+expect = ["hotspot"]
+style = "typo"
+
+
+[[case]]
+q = "my wifi is being a total pain rn"
+expect = ["wifi", "network-troubleshoot"]
+style = "slang"
+
+
+[[case]]
+q = "internet is trash today, what gives"
+expect = ["network-troubleshoot", "network-status"]
+style = "slang"
+
+
+[[case]]
+q = "vpn is being sus, keeps kicking me off"
+expect = ["vpn"]
+style = "slang"
+
+
+# ───────────────── Sound ─────────────────
+
+[[case]]
+q = "nothing comes out of the speakers"
+expect = ["sound"]
+style = "symptom"
+
+
+[[case]]
+q = "laptop is silent when a youtube video plays"
+expect = ["sound", "volume-mixer"]
+style = "symptom"
+
+
+[[case]]
+q = "awaaz nahi aa rahi laptop me"
+expect = ["sound"]
+style = "hinglish"
+
+
+[[case]]
+q = "audio going to my monitor instead of my speakers"
+expect = ["sound"]
+style = "symptom"
+
+
+[[case]]
+q = "zoom says nobody can hear me"
+expect = ["microphone", "privacy-microphone"]
+style = "indirect"
+
+
+[[case]]
+q = "my friends say I sound like I'm in a tunnel on calls"
+expect = ["microphone"]
+style = "indirect"
+
+
+[[case]]
+q = "mic chal nahi raha meeting me"
+expect = ["microphone", "privacy-microphone"]
+style = "hinglish"
+
+
+[[case]]
+q = "every time a call starts my music gets quiet"
+expect = ["sound-control-panel", "volume-mixer"]
+style = "indirect"
+
+
+[[case]]
+q = "spotify is way louder than everything else"
+expect = ["volume-mixer"]
+style = "indirect"
+
+
+[[case]]
+q = "I want chrome quiet but youtube loud"
+expect = ["volume-mixer"]
+style = "goal"
+
+
+[[case]]
+q = "crackling noise from the speakers all the time"
+expect = ["sound-control-panel", "sound"]
+style = "symptom"
+
+
+[[case]]
+q = "sownd is distorted and bass is muddy"
+expect = ["sound-control-panel", "sound"]
+style = "typo"
+
+
+[[case]]
+q = "bluetooth speaker connected but sound still plays from laptop"
+expect = ["sound", "bluetooth"]
+style = "indirect"
+
+
+[[case]]
+q = "lappy is mute af"
+expect = ["sound", "volume-mixer"]
+style = "slang"
+
+
+[[case]]
+q = "ngl the sound is kinda trash in games"
+expect = ["sound", "volume-mixer"]
+style = "slang"
+
+
+# ───────────────── Display ─────────────────
+
+[[case]]
+q = "text looks blurry on my external monitor"
+expect = ["display"]
+style = "symptom"
+
+
+[[case]]
+q = "my eyes hurt from the screen late at night"
+expect = ["night-light", "display"]
+style = "indirect"
+
+
+[[case]]
+q = "screen flickers when I scroll"
+expect = ["display", "graphics"]
+style = "symptom"
+
+
+[[case]]
+q = "tv not showing my laptop screen"
+expect = ["display", "project"]
+style = "symptom"
+
+
+[[case]]
+q = "mirror my android to this computer"
+expect = ["project", "phone-link"]
+style = "goal"
+
+
+[[case]]
+q = "can't read anything on screen, everything is minuscule"
+expect = ["display", "text-size"]
+style = "symptom"
+
+
+[[case]]
+q = "game runs on the weak intel chip instead of my nvidia card"
+expect = ["graphics"]
+style = "indirect"
+
+
+[[case]]
+q = "colours look washed out, very cold tone"
+expect = ["display", "night-light"]
+style = "symptom"
+
+
+[[case]]
+q = "external screen stays black when I plug it in"
+expect = ["display"]
+style = "symptom"
+
+
+[[case]]
+q = "monitor ki resolution kam lag rahi hai"
+expect = ["display"]
+style = "hinglish"
+
+
+[[case]]
+q = "brigtness is nuking my eyes"
+expect = ["display", "night-light"]
+style = "typo"
+
+
+[[case]]
+q = "screen is bright af at night"
+expect = ["night-light", "display"]
+style = "slang"
+
+
+# ───────────────── Bluetooth & devices ─────────────────
+
+[[case]]
+q = "wifi adapter missing from the list entirely"
+expect = ["device-manager", "network-connections"]
+style = "symptom"
+
+
+[[case]]
+q = "bluetooth ka mouse connect nahi ho raha"
+expect = ["bluetooth", "mouse"]
+style = "hinglish"
+
+
+[[case]]
+q = "earbuds won't pair with my laptop"
+expect = ["bluetooth"]
+style = "symptom"
+
+
+[[case]]
+q = "blutooth headphones dont show up"
+expect = ["bluetooth"]
+style = "typo"
+
+
+[[case]]
+q = "bluetooth speaker keeps unpairing itself"
+expect = ["bluetooth"]
+style = "symptom"
+
+
+[[case]]
+q = "bt is being weird, wont pair with anything"
+expect = ["bluetooth"]
+style = "slang"
+
+
+[[case]]
+q = "printer prints blank pages"
+expect = ["printers"]
+style = "symptom"
+
+
+[[case]]
+q = "printr kaam nahi kar raha"
+expect = ["printers"]
+style = "typo"
+
+
+[[case]]
+q = "cursor flies around too fast, slow it down"
+expect = ["mouse"]
+style = "goal"
+
+
+[[case]]
+q = "I'm left handed, flip the mouse buttons"
+expect = ["mouse"]
+style = "goal"
+
+
+[[case]]
+q = "laptop mein mouse ka speed bahut slow hai"
+expect = ["mouse"]
+style = "hinglish"
+
+
+[[case]]
+q = "tpuchpad jumps while I type"
+expect = ["touchpad", "typing"]
+style = "typo"
+
+
+[[case]]
+q = "pendrive laptop mein dikh nahi raha"
+expect = ["usb", "disks"]
+style = "hinglish"
+
+
+[[case]]
+q = "every time I connect my phone a window opens by itself"
+expect = ["autoplay"]
+style = "symptom"
+
+
+[[case]]
+q = "phone plug karte hi ek app khul jata hai"
+expect = ["autoplay"]
+style = "hinglish"
+
+
+[[case]]
+q = "sync my android texts to this computer"
+expect = ["phone-link"]
+style = "goal"
+
+
+[[case]]
+q = "my webcam picture is grainy in dim rooms"
+expect = ["camera"]
+style = "symptom"
+
+
+[[case]]
+q = "camera light is on but the video is black"
+expect = ["camera", "privacy-camera"]
+style = "symptom"
+
+
+[[case]]
+q = "warning icon on a device in the hardware list"
+expect = ["device-manager"]
+style = "indirect"
+
+
+[[case]]
+q = "need to reinstall the bluetooth driver"
+expect = ["device-manager"]
+style = "goal"
+
+
+# ───────────────── Power & battery ─────────────────
+
+[[case]]
+q = "laptop drains battery even when I'm not using it"
+expect = ["power", "battery-saver"]
+style = "symptom"
+
+
+[[case]]
+q = "battery went from 80 to 40 in one video call"
+expect = ["power", "battery-saver"]
+style = "symptom"
+
+
+[[case]]
+q = "laptop dies in 2 hours"
+expect = ["battery-saver", "power"]
+style = "indirect"
+
+
+[[case]]
+q = "display sleeps while I read"
+expect = ["power"]
+style = "symptom"
+
+
+[[case]]
+q = "closing the laptop lid doesn't put it to sleep"
+expect = ["power-options"]
+style = "symptom"
+
+
+[[case]]
+q = "pressing the power button shuts it down instead of sleeping"
+expect = ["power-options"]
+style = "symptom"
+
+
+[[case]]
+q = "laptop phir se sleep mode mein chala jata hai"
+expect = ["power"]
+style = "hinglish"
+
+
+[[case]]
+q = "I want max performance even on the charger"
+expect = ["power"]
+style = "goal"
+
+
+[[case]]
+q = "battery low, how do I stretch it till I get home"
+expect = ["battery-saver"]
+style = "goal"
+
+
+[[case]]
+q = "my lappy is dying so fast rn"
+expect = ["battery-saver", "power"]
+style = "slang"
+
+
+# ───────────────── Storage ─────────────────
+
+[[case]]
+q = "my ssd is full again"
+expect = ["storage"]
+style = "symptom"
+
+
+[[case]]
+q = "c: drive ka space khatam ho gaya"
+expect = ["storage", "storage-recommendations"]
+style = "hinglish"
+
+
+[[case]]
+q = "whats eating up my hard drive"
+expect = ["storage"]
+style = "question"
+
+
+[[case]]
+q = "clean out junk files and old downloads"
+expect = ["storage-recommendations"]
+style = "goal"
+
+
+[[case]]
+q = "delete the stuff windows doesn't need anymore"
+expect = ["storage-recommendations"]
+style = "indirect"
+
+
+[[case]]
+q = "I want to split my drive into two partitions"
+expect = ["disk-management"]
+style = "goal"
+
+
+[[case]]
+q = "downloads always land on C no matter what"
+expect = ["save-locations"]
+style = "symptom"
+
+
+[[case]]
+q = "is my hard disk about to die"
+expect = ["disks"]
+style = "question"
+
+
+[[case]]
+q = "pendrive raw ho gayi, open nahi ho rahi"
+expect = ["disks", "disk-management"]
+style = "hinglish"
+
+
+[[case]]
+q = "storge is full again and i dont know why"
+expect = ["storage", "storage-recommendations"]
+style = "typo"
+
+
+# ───────────────── Apps ─────────────────
+
+[[case]]
+q = "app keeps crashing as soon as I open it"
+expect = ["installed-apps"]
+style = "symptom"
+
+
+[[case]]
+q = "pc is hanging and I can't close a window"
+expect = ["task-manager"]
+style = "symptom"
+
+
+[[case]]
+q = "pc is janky af, everything freezes"
+expect = ["task-manager"]
+style = "slang"
+
+
+[[case]]
+q = "remove the preinstalled bloatware"
+expect = ["installed-apps"]
+style = "goal"
+
+
+[[case]]
+q = "kisi program ko uninstall karna hai"
+expect = ["installed-apps"]
+style = "hinglish"
+
+
+[[case]]
+q = "clicking a pdf always opens Edge"
+expect = ["default-apps"]
+style = "symptom"
+
+
+[[case]]
+q = "I want a different browser to be the default"
+expect = ["default-apps"]
+style = "goal"
+
+
+[[case]]
+q = "defualt apps keep resetting to edge"
+expect = ["default-apps"]
+style = "typo"
+
+
+[[case]]
+q = "laptop takes forever to boot up"
+expect = ["startup-apps"]
+style = "symptom"
+
+
+[[case]]
+q = "too many things open when I log in"
+expect = ["startup-apps"]
+style = "symptom"
+
+
+[[case]]
+q = "CPU is pinned at 100 percent for no reason"
+expect = ["task-manager", "resource-monitor"]
+style = "symptom"
+
+
+[[case]]
+q = "I need the telnet client turned on"
+expect = ["optional-features"]
+style = "goal"
+
+
+# ───────────────── Update & security ─────────────────
+
+[[case]]
+q = "windows keeps asking me to restart for an update"
+expect = ["windows-update"]
+style = "symptom"
+
+
+[[case]]
+q = "I want to push back the update for a week"
+expect = ["windows-update"]
+style = "goal"
+
+
+[[case]]
+q = "everything broke right after last week's patch, undo it"
+expect = ["update-history"]
+style = "symptom"
+
+
+[[case]]
+q = "which patches are on this machine"
+expect = ["update-history"]
+style = "question"
+
+
+[[case]]
+q = "windows update baar baar restart maang raha hai"
+expect = ["windows-update"]
+style = "hinglish"
+
+
+[[case]]
+q = "windwos update keeps failing"
+expect = ["windows-update", "update-history"]
+style = "typo"
+
+
+[[case]]
+q = "windows is being annoying, restart again??"
+expect = ["windows-update"]
+style = "slang"
+
+
+[[case]]
+q = "I think I got a virus, pop-ups everywhere"
+expect = ["windows-security"]
+style = "symptom"
+
+
+[[case]]
+q = "unknown program installed that I never asked for"
+expect = ["windows-security", "installed-apps"]
+style = "symptom"
+
+
+[[case]]
+q = "black screen says windows isn't activated"
+expect = ["activation"]
+style = "symptom"
+
+
+[[case]]
+q = "where do I put my license key"
+expect = ["activation"]
+style = "goal"
+
+
+[[case]]
+q = "my laptop got stolen, how can I locate it"
+expect = ["find-my-device"]
+style = "symptom"
+
+
+[[case]]
+q = "laptop kho gaya, kaise dhoondhu"
+expect = ["find-my-device"]
+style = "hinglish"
+
+
+[[case]]
+q = "where's my laptop at, it's gone"
+expect = ["find-my-device"]
+style = "slang"
+
+
+[[case]]
+q = "I want my drive locked so nobody can read it"
+expect = ["encryption"]
+style = "goal"
+
+
+[[case]]
+q = "some newer hardware drivers are waiting, where do I grab them"
+expect = ["optional-updates", "windows-update"]
+style = "indirect"
+
+
+# ───────────────── Accounts & privacy ─────────────────
+
+[[case]]
+q = "forgot my windows PIN"
+expect = ["sign-in-options"]
+style = "symptom"
+
+
+[[case]]
+q = "fingerprint reader stopped working at login"
+expect = ["sign-in-options"]
+style = "symptom"
+
+
+[[case]]
+q = "camera won't recognise my face at the lock screen"
+expect = ["sign-in-options", "camera"]
+style = "symptom"
+
+
+[[case]]
+q = "I want to skip typing my password every morning"
+expect = ["sign-in-options"]
+style = "goal"
+
+
+[[case]]
+q = "my kid needs their own login with limits"
+expect = ["other-users"]
+style = "goal"
+
+
+[[case]]
+q = "I don't want my microsoft login on this laptop"
+expect = ["your-info"]
+style = "goal"
+
+
+[[case]]
+q = "gmail not syncing in the mail app"
+expect = ["email-accounts"]
+style = "symptom"
+
+
+[[case]]
+q = "zoom tells me my cam is off-limits"
+expect = ["privacy-camera", "camera"]
+style = "indirect"
+
+
+[[case]]
+q = "discord can't hear my voice though the mic works elsewhere"
+expect = ["privacy-microphone"]
+style = "indirect"
+
+
+[[case]]
+q = "stop apps from knowing where I am"
+expect = ["privacy-location"]
+style = "goal"
+
+
+[[case]]
+q = "maps app keeps placing me in the wrong town"
+expect = ["privacy-location"]
+style = "symptom"
+
+
+[[case]]
+q = "windows keeps sending usage info to microsoft"
+expect = ["privacy-general"]
+style = "symptom"
+
+
+[[case]]
+q = "block every app from using camera and mic"
+expect = ["privacy-camera", "privacy-microphone"]
+style = "goal"
+
+
+[[case]]
+q = "dont wanna be tracked lol, turn off the stalking stuff"
+expect = ["privacy-general", "privacy-location"]
+style = "slang"
+
+
+[[case]]
+q = "laptop ki camera kisi app ko access nahi karne do"
+expect = ["privacy-camera"]
+style = "hinglish"
+
+
+# ───────────────── Personalization, system, accessibility, gaming ─────────────────
+
+[[case]]
+q = "make the desktop a plain solid colour"
+expect = ["background"]
+style = "goal"
+
+
+[[case]]
+q = "my eyes hurt, I want everything dark"
+expect = ["colors"]
+style = "indirect"
+
+
+[[case]]
+q = "make the window accent match my wallpaper"
+expect = ["colors"]
+style = "goal"
+
+
+[[case]]
+q = "I hate the centered icons at the bottom"
+expect = ["taskbar"]
+style = "indirect"
+
+
+[[case]]
+q = "taskbar keeps hiding itself"
+expect = ["taskbar"]
+style = "symptom"
+
+
+[[case]]
+q = "lock screen picture is ugly, swap it"
+expect = ["lock-screen"]
+style = "goal"
+
+
+[[case]]
+q = "lock screen is mid, change it"
+expect = ["lock-screen"]
+style = "slang"
+
+
+[[case]]
+q = "installed a ttf file, how do I add it"
+expect = ["fonts"]
+style = "goal"
+
+
+[[case]]
+q = "need an hour of no distractions to study"
+expect = ["focus"]
+style = "goal"
+
+
+[[case]]
+q = "clipboard only remembers the last thing I copied"
+expect = ["clipboard"]
+style = "symptom"
+
+
+[[case]]
+q = "paste something I copied yesterday"
+expect = ["clipboard"]
+style = "goal"
+
+
+[[case]]
+q = "how much memory is this laptop packing"
+expect = ["about"]
+style = "question"
+
+
+[[case]]
+q = "I need to control my home pc from my phone"
+expect = ["remote-desktop"]
+style = "goal"
+
+
+[[case]]
+q = "screen went blue and restarted twice last night"
+expect = ["event-viewer", "recovery"]
+style = "symptom"
+
+
+[[case]]
+q = "a service keeps eating cpu, how do I stop it"
+expect = ["services"]
+style = "goal"
+
+
+[[case]]
+q = "time is off by an hour"
+expect = ["date-time"]
+style = "symptom"
+
+
+[[case]]
+q = "want hindi typing on this laptop"
+expect = ["language"]
+style = "goal"
+
+
+[[case]]
+q = "excel numbers and dates look wrong, different format"
+expect = ["language"]
+style = "indirect"
+
+
+[[case]]
+q = "I can't see the .txt endings on my files"
+expect = ["developers"]
+style = "goal"
+
+
+[[case]]
+q = "grandma can't read anything on screen, enlarge the letters"
+expect = ["text-size"]
+style = "goal"
+
+
+[[case]]
+q = "zoom into a small chart on screen"
+expect = ["magnifier"]
+style = "goal"
+
+
+[[case]]
+q = "read the screen aloud for my blind dad"
+expect = ["narrator"]
+style = "goal"
+
+
+[[case]]
+q = "subtitles for everything playing on pc"
+expect = ["captions"]
+style = "goal"
+
+
+[[case]]
+q = "game stutters when lots of players are on screen"
+expect = ["game-mode", "graphics"]
+style = "symptom"
+
+
+[[case]]
+q = "record the last 30 seconds of my gameplay"
+expect = ["game-bar"]
+style = "goal"
+
+
+[[case]]
+q = "apps keep popping up messages all day"
+expect = ["notifications"]
+style = "symptom"
+
+
+[[case]]
+q = "I want two windows side by side fast"
+expect = ["multitasking"]
+style = "goal"
+
+
+[[case]]
+q = "which drivers and firmware versions does this pc have, full report"
+expect = ["system-info"]
+style = "question"
+
+
+[[case]]
+q = "the mouse arrow is tiny and I keep losing it"
+expect = ["mouse-pointer"]
+style = "symptom"
+
+
+# ───────────────── None (nothing in the catalog should match) ─────────────────
+
+[[case]]
+q = "photos from goa trip"
+expect = []
+style = "goal"
+
+
+[[case]]
+q = "recipe for paneer tikka"
+expect = []
+style = "goal"
+
+
+[[case]]
+q = "the pdf about tax filing"
+expect = []
+style = "question"
+
+
+[[case]]
+q = "cricket score today"
+expect = []
+style = "question"
+
+
+[[case]]
+q = "best bus route to manali"
+expect = []
+style = "question"
+
+
+[[case]]
+q = "write a poem about monsoon"
+expect = []
+style = "goal"
+
+
+[[case]]
+q = "birthday wishes for my sister"
+expect = []
+style = "goal"
+
+
+[[case]]
+q = "translate hello to spanish"
+expect = []
+style = "goal"
+
+
+[[case]]
+q = "cheap flights to delhi"
+expect = []
+style = "question"
+
+
+[[case]]
+q = "mehndi designs for wedding"
+expect = []
+style = "goal"

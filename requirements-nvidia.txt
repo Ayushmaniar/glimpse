@@ -1,0 +1,4 @@
+# Optional: faster voice search on NVIDIA GPUs (Whisper on CUDA). install.ps1 adds these when nvidia-smi is found.
+# Without them, voice runs on the CPU with a smaller model.
+nvidia-cublas-cu12==12.9.2.10
+nvidia-cudnn-cu12==9.27.0.42

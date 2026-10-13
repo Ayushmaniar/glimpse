@@ -1,0 +1,18 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+
+# Your index, settings, thumbnails and logs: personal, never committed
+.data/
+
+# The model is downloaded on install (485 MB)
+models/*
+!models/.gitkeep
+
+# Launch video build output
+video/node_modules/
+video/out/
+video/frames/
+
+*.log

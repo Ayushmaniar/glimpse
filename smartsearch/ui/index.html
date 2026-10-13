@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>SmartSearch</title>
+<script>window.SS_TOKEN="{{TOKEN}}";</script>
+<script>
+  /* Served by the app as /ui/style.css and /ui/app.js; opened from disk they sit next to this file. */
+  (function () {
+    var base = /^http/.test(location.protocol) ? "/ui/" : "";
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = base + "style.css";
+    document.head.appendChild(link);
+    window.SS_BASE = base;
+  })();
+</script>
+</head>
+<body>
+<div class="app">
+  <header id="top" class="top pywebview-drag-region" title="Drag to move · double-click to recentre">
+    <span class="grip pywebview-drag-region" aria-hidden="true"></span>
+    <div id="field" class="field pywebview-drag-region">
+      <svg class="ico-search" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <button id="scope" class="scope" type="button" tabindex="-1" hidden
+              title="Tab: switch between this folder and This PC"></button>
+      <div id="mode-slot" class="mode-slot"></div>
+      <input id="q" type="text" placeholder="Search files, photos, settings, emoji&#8230;"
+             autocomplete="off" spellcheck="false" aria-label="Search">
+      <span id="hud" class="hud" hidden></span>
+      <span id="busy-dot" class="busy-dot" hidden></span>
+      <button id="mic" class="icon-btn" type="button" title="Voice search (Ctrl+M)"
+              aria-label="Voice search" aria-pressed="false" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/>
+          <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div id="interp" class="interp pywebview-drag-region" hidden></div>
+    <div id="filters" class="filters pywebview-drag-region" hidden></div>
+    <div id="note" class="note" hidden></div>
+  </header>
+
+  <main id="results" class="results fx" hidden>
+    <div id="sections"></div>
+  </main>
+
+  <section id="ql" class="ql" hidden role="dialog" aria-label="Quick look">
+    <div class="ql-card">
+      <header class="ql-head">
+        <div id="ql-tile" class="ql-tile"></div>
+        <div class="ql-titles">
+          <div id="ql-title" class="ql-title"></div>
+          <div id="ql-sub" class="ql-sub"></div>
+        </div>
+        <div class="ql-acts">
+          <button id="ql-open" class="ql-btn" type="button" tabindex="-1">Open</button>
+          <button id="ql-reveal" class="ql-btn" type="button" tabindex="-1">Show in folder</button>
+          <button id="ql-close" class="ql-x" type="button" tabindex="-1" aria-label="Close preview" title="Close (Esc)">&#215;</button>
+        </div>
+      </header>
+      <div id="ql-body" class="ql-body"></div>
+      <footer class="ql-foot">
+        <div id="ql-left" class="ql-left"></div>
+        <span id="ql-hint" class="ql-hint"></span>
+      </footer>
+    </div>
+  </section>
+
+  <footer id="footer" class="status fx pywebview-drag-region" hidden>
+    <span id="backend" class="pill" hidden></span>
+    <span id="mock-tag" class="mock-tag" hidden>mock data</span>
+    <span id="message" class="msg pywebview-drag-region"></span>
+    <span id="progress" class="progress" hidden><span id="progress-bar"></span></span>
+    <span class="grow pywebview-drag-region"></span>
+    <span class="keys pywebview-drag-region">&#8593;&#8595; move &#183; Enter open &#183; &#8679;Space preview &#183; Esc close</span>
+    <div id="sort" class="seg" role="group" aria-label="Sort results">
+      <button id="sort-best" type="button" tabindex="-1" aria-pressed="true">Best match</button>
+      <button id="sort-new" type="button" tabindex="-1" aria-pressed="false">Newest</button>
+    </div>
+    <span id="counts"></span>
+    <span id="latency"></span>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="drop" class="drop">Drop an image to search with it</div>
+</div>
+<script>
+  (function () {
+    var base = /^http/.test(location.protocol) ? "/ui/" : "";
+    var s = document.createElement("script");
+    s.src = base + "app.js";
+    s.async = false;
+    document.body.appendChild(s);
+  })();
+</script>
+</body>
+</html>

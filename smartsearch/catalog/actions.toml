@@ -1,0 +1,1298 @@
+# Windows actions the launcher can suggest.
+#
+# Each [[action]] is matched against the user's query by meaning (EmbeddingGemma 2),
+# not by keywords. Fields:
+#   id        unique, stable name
+#   title     what the result card shows
+#   about     one sentence describing what the page/tool is for (also used for matching)
+#   category  groups actions; a category with a status widget (network, power, storage)
+#             shows that widget when it wins
+#   kind      settings | tool | command
+#   open      what to launch: an ms-settings: URI, a .cpl/.msc/.exe, or a command line
+#   phrases   ways people describe the problem in their own words (used for matching)
+#
+# Settings URIs come from Microsoft's ms-settings reference:
+# https://learn.microsoft.com/windows/apps/develop/launch/launch-settings
+
+# ───────────────────────── Network ─────────────────────────
+
+[[action]]
+id = "wifi"
+title = "Wi-Fi settings"
+about = "Turn Wi-Fi on or off, see available wireless networks and connect to one."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-wifi"
+phrases = [
+  "wifi not working",
+  "can't connect to wifi",
+  "turn on wifi",
+  "wifi is off",
+  "no wireless networks showing",
+  "connect to a wifi network",
+]
+
+[[action]]
+id = "known-networks"
+title = "Manage known Wi-Fi networks"
+about = "See saved Wi-Fi networks, forget a network so you can rejoin it with a new password, and turn auto-connect on or off."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-wifisettings"
+phrases = [
+  "forget wifi network",
+  "wifi password changed and won't reconnect",
+  "remove saved network",
+  "stop auto connecting to a network",
+]
+
+[[action]]
+id = "network-status"
+title = "Network & internet overview"
+about = "See whether you are connected to the internet, which network you are on, and data usage."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-status"
+phrases = [
+  "no internet",
+  "connected but no internet",
+  "am I online",
+  "internet stopped working",
+]
+
+[[action]]
+id = "network-reset"
+title = "Network reset & adapters"
+about = "Enable or disable network adapters, view hardware properties, and reset all network adapters to defaults."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-advancedsettings"
+phrases = [
+  "reset network settings",
+  "internet broken after update",
+  "disable network adapter",
+  "nothing fixes my internet",
+  "network adapter disabled",
+]
+
+[[action]]
+id = "network-troubleshoot"
+title = "Troubleshoot (Get Help) — network & other problems"
+about = "Run Windows troubleshooters that automatically find and fix common problems such as internet connection issues."
+category = "network"
+kind = "settings"
+open = "ms-settings:troubleshoot"
+phrases = [
+  "fix my internet automatically",
+  "run network troubleshooter",
+  "diagnose connection problem",
+  "windows troubleshooter",
+]
+
+[[action]]
+id = "airplane-mode"
+title = "Airplane mode"
+about = "Turn airplane mode on or off, which disables Wi-Fi, Bluetooth and cellular radios."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-airplanemode"
+phrases = [
+  "turn off airplane mode",
+  "wifi greyed out",
+  "airplane mode stuck on",
+  "all wireless is disabled",
+]
+
+[[action]]
+id = "ethernet"
+title = "Ethernet settings"
+about = "Settings for wired network connections: IP assignment, DNS, metered connection."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-ethernet"
+phrases = [
+  "ethernet not working",
+  "wired connection not detected",
+  "lan cable plugged in but no internet",
+]
+
+[[action]]
+id = "vpn"
+title = "VPN settings"
+about = "Add, connect, disconnect or remove VPN connections."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-vpn"
+phrases = [
+  "vpn not connecting",
+  "disconnect vpn",
+  "add a vpn",
+  "internet only works with vpn off",
+]
+
+[[action]]
+id = "proxy"
+title = "Proxy settings"
+about = "Configure or turn off a proxy server for network connections."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-proxy"
+phrases = [
+  "proxy server error",
+  "turn off proxy",
+  "browser says proxy is refusing connections",
+]
+
+[[action]]
+id = "hotspot"
+title = "Mobile hotspot"
+about = "Share this PC's internet connection with other devices over Wi-Fi."
+category = "network"
+kind = "settings"
+open = "ms-settings:network-mobilehotspot"
+phrases = [
+  "share my internet with my phone",
+  "turn on hotspot",
+  "make laptop a wifi hotspot",
+]
+
+[[action]]
+id = "network-connections"
+title = "Network Connections (adapters)"
+about = "Classic control panel listing every network adapter, where you can enable, disable, or edit IPv4 and DNS properties."
+category = "network"
+kind = "tool"
+open = "ncpa.cpl"
+phrases = [
+  "change dns server",
+  "set static ip address",
+  "ipv4 properties",
+  "network adapters list",
+]
+
+[[action]]
+id = "ipconfig"
+title = "Show IP configuration"
+about = "Open a terminal showing your IP address, gateway, DNS servers and adapter details (ipconfig /all)."
+category = "network"
+kind = "command"
+open = "cmd /k ipconfig /all"
+phrases = [
+  "what is my ip address",
+  "show my ip",
+  "find my default gateway",
+  "mac address of my laptop",
+]
+
+[[action]]
+id = "flush-dns"
+title = "Flush DNS cache"
+about = "Clear the DNS resolver cache, which fixes websites not loading or resolving to the wrong address (ipconfig /flushdns)."
+category = "network"
+kind = "command"
+open = "cmd /k ipconfig /flushdns"
+phrases = [
+  "website won't load but others do",
+  "dns error",
+  "DNS_PROBE_FINISHED_NXDOMAIN",
+  "server ip address could not be found",
+  "clear dns",
+]
+
+[[action]]
+id = "ping-test"
+title = "Test internet connection (ping)"
+about = "Open a terminal that pings a public server to check whether packets reach the internet, the latency and packet loss."
+category = "network"
+kind = "command"
+open = "cmd /k ping -n 10 8.8.8.8"
+phrases = [
+  "internet keeps dropping",
+  "is my connection stable",
+  "high ping",
+  "packet loss",
+  "check latency",
+]
+
+[[action]]
+id = "firewall"
+title = "Windows Firewall"
+about = "Allow or block apps through the firewall and turn firewall protection on or off."
+category = "network"
+kind = "tool"
+open = "firewall.cpl"
+phrases = [
+  "allow app through firewall",
+  "firewall blocking my game",
+  "turn off firewall",
+]
+
+# ───────────────────────── Bluetooth & devices ─────────────────────────
+
+[[action]]
+id = "bluetooth"
+title = "Bluetooth & devices"
+about = "Turn Bluetooth on or off and pair or remove headphones, speakers, mice, keyboards and controllers."
+category = "devices"
+kind = "settings"
+open = "ms-settings:bluetooth"
+phrases = [
+  "bluetooth not working",
+  "pair airpods",
+  "connect bluetooth headphones",
+  "bluetooth device won't connect",
+  "remove a bluetooth device",
+]
+
+[[action]]
+id = "printers"
+title = "Printers & scanners"
+about = "Add, remove or troubleshoot printers and scanners and manage print queues."
+category = "devices"
+kind = "settings"
+open = "ms-settings:printers"
+phrases = [
+  "printer not printing",
+  "add a printer",
+  "printer offline",
+  "scan a document",
+  "print job stuck",
+]
+
+[[action]]
+id = "mouse"
+title = "Mouse settings"
+about = "Change mouse pointer speed, primary button, scrolling and wheel behaviour."
+category = "devices"
+kind = "settings"
+open = "ms-settings:mousetouchpad"
+phrases = [
+  "mouse too slow",
+  "change scroll direction",
+  "swap left and right mouse button",
+  "mouse sensitivity",
+]
+
+[[action]]
+id = "touchpad"
+title = "Touchpad settings"
+about = "Turn the touchpad on or off and change its sensitivity, taps and gestures."
+category = "devices"
+kind = "settings"
+open = "ms-settings:devices-touchpad"
+phrases = [
+  "touchpad not working",
+  "trackpad stopped responding",
+  "disable touchpad",
+  "three finger gestures",
+  "tap to click",
+]
+
+[[action]]
+id = "typing"
+title = "Typing & keyboard settings"
+about = "Autocorrect, text suggestions, touch keyboard and advanced keyboard settings."
+category = "devices"
+kind = "settings"
+open = "ms-settings:typing"
+phrases = [
+  "turn off autocorrect",
+  "keyboard typing wrong characters",
+  "text suggestions",
+]
+
+[[action]]
+id = "usb"
+title = "USB settings"
+about = "Notifications about USB connection issues and USB battery saver."
+category = "devices"
+kind = "settings"
+open = "ms-settings:usb"
+phrases = [
+  "usb device not recognized",
+  "usb drive not showing up",
+]
+
+[[action]]
+id = "autoplay"
+title = "AutoPlay"
+about = "Choose what happens when you plug in a USB drive, memory card or phone."
+category = "devices"
+kind = "settings"
+open = "ms-settings:autoplay"
+phrases = [
+  "stop photos app opening when I plug in my phone",
+  "what happens when I insert usb drive",
+]
+
+[[action]]
+id = "phone-link"
+title = "Phone Link / Mobile devices"
+about = "Link your phone to the PC: texts, calls, notifications and (on Android) photos."
+category = "devices"
+kind = "settings"
+open = "ms-settings:mobile-devices"
+phrases = [
+  "connect my phone to pc",
+  "see phone messages on laptop",
+  "transfer photos from phone",
+]
+
+[[action]]
+id = "camera"
+title = "Camera settings"
+about = "Manage connected cameras and webcams: brightness, contrast, and default camera."
+category = "devices"
+kind = "settings"
+open = "ms-settings:camera"
+phrases = [
+  "webcam blurry",
+  "camera too dark on video calls",
+  "choose which camera to use",
+]
+
+[[action]]
+id = "device-manager"
+title = "Device Manager"
+about = "See all hardware, update or roll back drivers, and find devices with problems."
+category = "devices"
+kind = "tool"
+open = "devmgmt.msc"
+phrases = [
+  "update drivers",
+  "driver problem",
+  "yellow exclamation mark on device",
+  "reinstall wifi driver",
+  "roll back graphics driver",
+]
+
+# ───────────────────────── Sound ─────────────────────────
+
+[[action]]
+id = "sound"
+title = "Sound settings"
+about = "Choose output and input devices, change volume, and fix no-audio problems."
+category = "sound"
+kind = "settings"
+open = "ms-settings:sound"
+phrases = [
+  "no sound",
+  "audio not working",
+  "speakers not working",
+  "sound comes from wrong device",
+  "headphones not detected",
+]
+
+[[action]]
+id = "volume-mixer"
+title = "Volume mixer"
+about = "Set the volume and output device separately for each app."
+category = "sound"
+kind = "settings"
+open = "ms-settings:apps-volume"
+phrases = [
+  "one app is too loud",
+  "spotify volume too low",
+  "change volume per app",
+]
+
+[[action]]
+id = "microphone"
+title = "Microphone (input device)"
+about = "Choose and test the default microphone and set its input volume."
+category = "sound"
+kind = "settings"
+open = "ms-settings:sound-defaultinputproperties"
+phrases = [
+  "mic not working",
+  "people can't hear me on zoom",
+  "microphone too quiet",
+  "test my microphone",
+]
+
+[[action]]
+id = "sound-control-panel"
+title = "Sound control panel (classic)"
+about = "Classic sound dialog for playback and recording devices, enhancements, formats and communications ducking."
+category = "sound"
+kind = "tool"
+open = "mmsys.cpl"
+phrases = [
+  "audio enhancements",
+  "sample rate",
+  "volume drops during calls",
+  "show disabled audio devices",
+]
+
+# ───────────────────────── Display ─────────────────────────
+
+[[action]]
+id = "display"
+title = "Display settings"
+about = "Brightness, resolution, scaling, orientation, refresh rate and multiple monitors."
+category = "display"
+kind = "settings"
+open = "ms-settings:display"
+phrases = [
+  "screen too dim",
+  "change resolution",
+  "text too small",
+  "second monitor not detected",
+  "screen is upside down",
+  "change refresh rate",
+]
+
+[[action]]
+id = "night-light"
+title = "Night light"
+about = "Reduce blue light at night with warmer screen colours on a schedule."
+category = "display"
+kind = "settings"
+open = "ms-settings:nightlight"
+phrases = [
+  "screen looks yellow",
+  "blue light filter",
+  "warm screen at night",
+]
+
+[[action]]
+id = "graphics"
+title = "Graphics settings"
+about = "Choose which GPU an app uses and turn on GPU scheduling and other graphics options."
+category = "display"
+kind = "settings"
+open = "ms-settings:display-advancedgraphics"
+phrases = [
+  "game using integrated graphics",
+  "use nvidia gpu for app",
+  "hardware accelerated gpu scheduling",
+]
+
+[[action]]
+id = "project"
+title = "Projecting to this PC"
+about = "Let other devices cast their screen to this PC wirelessly."
+category = "display"
+kind = "settings"
+open = "ms-settings:project"
+phrases = [
+  "cast phone screen to laptop",
+  "wireless display to this pc",
+]
+
+# ───────────────────────── Power & battery ─────────────────────────
+
+[[action]]
+id = "power"
+title = "Power & battery"
+about = "Battery level and usage per app, power mode, screen timeout and sleep settings."
+category = "power"
+kind = "settings"
+open = "ms-settings:powersleep"
+phrases = [
+  "battery draining fast",
+  "laptop goes to sleep too quickly",
+  "change power mode to best performance",
+  "screen turns off too fast",
+  "which app is using battery",
+]
+
+[[action]]
+id = "battery-saver"
+title = "Battery saver / Energy saver"
+about = "Turn on battery saver to extend battery life and choose when it turns on."
+category = "power"
+kind = "settings"
+open = "ms-settings:batterysaver"
+phrases = [
+  "save battery",
+  "extend battery life",
+  "turn on battery saver",
+]
+
+[[action]]
+id = "power-options"
+title = "Power Options (classic)"
+about = "Classic power plans and what closing the lid or pressing the power button does."
+category = "power"
+kind = "tool"
+open = "powercfg.cpl"
+phrases = [
+  "what happens when I close the lid",
+  "power button action",
+  "power plan",
+]
+
+# ───────────────────────── Storage ─────────────────────────
+
+[[action]]
+id = "storage"
+title = "Storage"
+about = "See what is using disk space and free up space with Storage Sense and cleanup recommendations."
+category = "storage"
+kind = "settings"
+open = "ms-settings:storagesense"
+phrases = [
+  "disk full",
+  "low disk space",
+  "free up space",
+  "what is taking up storage",
+  "c drive full",
+]
+
+[[action]]
+id = "storage-recommendations"
+title = "Cleanup recommendations"
+about = "Suggested large or unused files, unused apps and temporary files you can delete."
+category = "storage"
+kind = "settings"
+open = "ms-settings:storagerecommendations"
+phrases = [
+  "delete temporary files",
+  "find large files to delete",
+  "clean up my pc",
+]
+
+[[action]]
+id = "disks"
+title = "Disks & volumes"
+about = "See drives and partitions, change drive letters, format and check drive health."
+category = "storage"
+kind = "settings"
+open = "ms-settings:disksandvolumes"
+phrases = [
+  "format a drive",
+  "new ssd not showing",
+  "change drive letter",
+  "check ssd health",
+]
+
+[[action]]
+id = "disk-management"
+title = "Disk Management"
+about = "Classic tool to create, delete, shrink and extend partitions and initialise new disks."
+category = "storage"
+kind = "tool"
+open = "diskmgmt.msc"
+phrases = [
+  "partition a hard drive",
+  "extend c drive",
+  "unallocated space",
+]
+
+[[action]]
+id = "save-locations"
+title = "Default save locations"
+about = "Choose which drive new apps, documents, music and photos are saved to."
+category = "storage"
+kind = "settings"
+open = "ms-settings:savelocations"
+phrases = [
+  "save files to d drive by default",
+  "change where downloads are saved",
+]
+
+# ───────────────────────── Apps ─────────────────────────
+
+[[action]]
+id = "installed-apps"
+title = "Installed apps"
+about = "Uninstall, repair, reset or modify installed apps and see how much space they use."
+category = "apps"
+kind = "settings"
+open = "ms-settings:appsfeatures"
+phrases = [
+  "uninstall a program",
+  "remove an app",
+  "app keeps crashing reset it",
+  "repair an app",
+]
+
+[[action]]
+id = "default-apps"
+title = "Default apps"
+about = "Choose which app opens links, PDFs, photos, music and other file types."
+category = "apps"
+kind = "settings"
+open = "ms-settings:defaultapps"
+phrases = [
+  "change default browser",
+  "pdf opens in edge",
+  "open with different app by default",
+]
+
+[[action]]
+id = "startup-apps"
+title = "Startup apps"
+about = "Turn off apps that start automatically when you sign in, to make startup faster."
+category = "apps"
+kind = "settings"
+open = "ms-settings:startupapps"
+phrases = [
+  "laptop slow to boot",
+  "stop app from opening at startup",
+  "too many programs start automatically",
+]
+
+[[action]]
+id = "optional-features"
+title = "Optional features"
+about = "Add or remove optional Windows features such as language packs, OpenSSH, or media tools."
+category = "apps"
+kind = "settings"
+open = "ms-settings:optionalfeatures"
+phrases = [
+  "install openssh",
+  "add windows feature",
+]
+
+[[action]]
+id = "task-manager"
+title = "Task Manager"
+about = "See running apps and processes, CPU, memory, disk and network usage, and end frozen apps."
+category = "apps"
+kind = "tool"
+open = "taskmgr.exe"
+phrases = [
+  "app not responding",
+  "close a frozen program",
+  "computer is slow",
+  "what is using all my cpu",
+  "high memory usage",
+]
+
+# ───────────────────────── Update & security ─────────────────────────
+
+[[action]]
+id = "windows-update"
+title = "Windows Update"
+about = "Check for, download and install Windows updates, and pause or schedule them."
+category = "update"
+kind = "settings"
+open = "ms-settings:windowsupdate"
+phrases = [
+  "check for updates",
+  "update windows",
+  "update stuck",
+  "pause updates",
+]
+
+[[action]]
+id = "update-history"
+title = "Update history"
+about = "See which updates were installed, uninstall a recent update, or check for failed updates."
+category = "update"
+kind = "settings"
+open = "ms-settings:windowsupdate-history"
+phrases = [
+  "uninstall last update",
+  "problems after windows update",
+  "which updates were installed",
+]
+
+[[action]]
+id = "optional-updates"
+title = "Optional updates (drivers)"
+about = "Install optional driver and feature updates offered through Windows Update."
+category = "update"
+kind = "settings"
+open = "ms-settings:windowsupdate-optionalupdates"
+phrases = [
+  "get latest drivers from windows update",
+  "optional driver updates",
+]
+
+[[action]]
+id = "recovery"
+title = "Recovery"
+about = "Reset this PC, go back to a previous version of Windows, or restart into advanced startup."
+category = "update"
+kind = "settings"
+open = "ms-settings:recovery"
+phrases = [
+  "factory reset laptop",
+  "reset this pc",
+  "boot into bios or safe mode",
+  "go back to previous windows version",
+]
+
+[[action]]
+id = "windows-security"
+title = "Windows Security"
+about = "Virus and threat protection, run a scan, firewall status and device security."
+category = "security"
+kind = "settings"
+open = "ms-settings:windowsdefender"
+phrases = [
+  "scan for viruses",
+  "I think I have malware",
+  "antivirus",
+  "run a virus scan",
+]
+
+[[action]]
+id = "activation"
+title = "Activation"
+about = "Check whether Windows is activated, change product key or troubleshoot activation."
+category = "security"
+kind = "settings"
+open = "ms-settings:activation"
+phrases = [
+  "activate windows watermark",
+  "enter product key",
+  "is windows genuine",
+]
+
+[[action]]
+id = "find-my-device"
+title = "Find my device"
+about = "Locate your lost or stolen Windows device on a map."
+category = "security"
+kind = "settings"
+open = "ms-settings:findmydevice"
+phrases = [
+  "lost laptop",
+  "track stolen pc",
+]
+
+[[action]]
+id = "encryption"
+title = "Device encryption"
+about = "Turn device encryption / BitLocker on or off to protect your data."
+category = "security"
+kind = "settings"
+open = "ms-settings:deviceencryption"
+phrases = [
+  "bitlocker",
+  "encrypt my drive",
+]
+
+# ───────────────────────── Accounts & sign-in ─────────────────────────
+
+[[action]]
+id = "sign-in-options"
+title = "Sign-in options"
+about = "Set up Windows Hello face or fingerprint, PIN, password and dynamic lock."
+category = "accounts"
+kind = "settings"
+open = "ms-settings:signinoptions"
+phrases = [
+  "change my password",
+  "set up fingerprint login",
+  "face unlock not working",
+  "change pin",
+  "remove password at login",
+]
+
+[[action]]
+id = "your-info"
+title = "Your account info"
+about = "Your Microsoft account, profile picture and account type."
+category = "accounts"
+kind = "settings"
+open = "ms-settings:yourinfo"
+phrases = [
+  "change profile picture",
+  "switch to local account",
+  "my microsoft account",
+]
+
+[[action]]
+id = "other-users"
+title = "Other users"
+about = "Add, remove or change other user accounts on this PC and make someone an administrator."
+category = "accounts"
+kind = "settings"
+open = "ms-settings:otherusers"
+phrases = [
+  "add a new user",
+  "create account for my kid",
+  "make user admin",
+]
+
+[[action]]
+id = "email-accounts"
+title = "Email & accounts"
+about = "Accounts used by email, calendar and other apps."
+category = "accounts"
+kind = "settings"
+open = "ms-settings:emailandaccounts"
+phrases = [
+  "add gmail to mail app",
+  "remove email account",
+]
+
+# ───────────────────────── Privacy ─────────────────────────
+
+[[action]]
+id = "privacy-camera"
+title = "Camera privacy"
+about = "Allow or block apps from using your camera."
+category = "privacy"
+kind = "settings"
+open = "ms-settings:privacy-webcam"
+phrases = [
+  "camera not working in zoom",
+  "app can't access webcam",
+  "camera blocked",
+]
+
+[[action]]
+id = "privacy-microphone"
+title = "Microphone privacy"
+about = "Allow or block apps from using your microphone."
+category = "privacy"
+kind = "settings"
+open = "ms-settings:privacy-microphone"
+phrases = [
+  "app can't access microphone",
+  "mic blocked for discord",
+]
+
+[[action]]
+id = "privacy-location"
+title = "Location"
+about = "Turn location services on or off and choose which apps can use your location."
+category = "privacy"
+kind = "settings"
+open = "ms-settings:privacy-location"
+phrases = [
+  "turn off location tracking",
+  "weather shows wrong city",
+  "location services",
+]
+
+[[action]]
+id = "privacy-general"
+title = "Privacy & security overview"
+about = "General privacy options, diagnostics and feedback, and app permissions."
+category = "privacy"
+kind = "settings"
+open = "ms-settings:privacy"
+phrases = [
+  "stop microsoft tracking me",
+  "diagnostic data",
+  "app permissions",
+]
+
+# ───────────────────────── Personalization ─────────────────────────
+
+[[action]]
+id = "background"
+title = "Desktop background"
+about = "Change the desktop wallpaper, slideshow or solid colour."
+category = "personalization"
+kind = "settings"
+open = "ms-settings:personalization-background"
+phrases = [
+  "change wallpaper",
+  "set a picture as background",
+]
+
+[[action]]
+id = "colors"
+title = "Colors & dark mode"
+about = "Switch between light and dark mode and choose an accent colour."
+category = "personalization"
+kind = "settings"
+open = "ms-settings:colors"
+phrases = [
+  "turn on dark mode",
+  "light theme",
+  "change accent color",
+]
+
+[[action]]
+id = "taskbar"
+title = "Taskbar"
+about = "Taskbar alignment, auto-hide, which icons appear and system tray icons."
+category = "personalization"
+kind = "settings"
+open = "ms-settings:taskbar"
+phrases = [
+  "move start button to the left",
+  "hide taskbar",
+  "taskbar icons missing",
+]
+
+[[action]]
+id = "lock-screen"
+title = "Lock screen"
+about = "Lock screen picture, status and screen saver."
+category = "personalization"
+kind = "settings"
+open = "ms-settings:lockscreen"
+phrases = [
+  "change lock screen picture",
+  "screen saver",
+]
+
+[[action]]
+id = "fonts"
+title = "Fonts"
+about = "Install, view and remove fonts."
+category = "personalization"
+kind = "settings"
+open = "ms-settings:fonts"
+phrases = [
+  "install a font",
+  "where are my fonts",
+]
+
+# ───────────────────────── System ─────────────────────────
+
+[[action]]
+id = "notifications"
+title = "Notifications"
+about = "Turn notifications on or off for each app and set Do not disturb."
+category = "system"
+kind = "settings"
+open = "ms-settings:notifications"
+phrases = [
+  "too many notifications",
+  "turn off popups from an app",
+  "do not disturb",
+]
+
+[[action]]
+id = "focus"
+title = "Focus"
+about = "Start a focus session that silences notifications and distractions."
+category = "system"
+kind = "settings"
+open = "ms-settings:quiethours"
+phrases = [
+  "focus mode",
+  "silence everything while I work",
+]
+
+[[action]]
+id = "clipboard"
+title = "Clipboard history"
+about = "Turn on clipboard history (Win+V) and sync clipboard across devices."
+category = "system"
+kind = "settings"
+open = "ms-settings:clipboard"
+phrases = [
+  "see things I copied earlier",
+  "copy paste history",
+]
+
+[[action]]
+id = "multitasking"
+title = "Multitasking & snap"
+about = "Snap windows, snap layouts, virtual desktops and Alt+Tab behaviour."
+category = "system"
+kind = "settings"
+open = "ms-settings:multitasking"
+phrases = [
+  "split screen two windows",
+  "snap layouts",
+  "windows snapping annoying",
+]
+
+[[action]]
+id = "about"
+title = "About this PC"
+about = "Device specifications: processor, RAM, Windows version and edition; rename this PC."
+category = "system"
+kind = "settings"
+open = "ms-settings:about"
+phrases = [
+  "how much ram do I have",
+  "what windows version",
+  "rename my pc",
+  "laptop specs",
+]
+
+[[action]]
+id = "system-info"
+title = "System Information"
+about = "Detailed hardware and software report: BIOS version, motherboard, drivers and components."
+category = "system"
+kind = "tool"
+open = "msinfo32.exe"
+phrases = [
+  "bios version",
+  "motherboard model",
+  "full hardware details",
+]
+
+[[action]]
+id = "remote-desktop"
+title = "Remote Desktop"
+about = "Allow other computers to connect to this PC remotely."
+category = "system"
+kind = "settings"
+open = "ms-settings:remotedesktop"
+phrases = [
+  "access this pc remotely",
+  "enable rdp",
+]
+
+[[action]]
+id = "event-viewer"
+title = "Event Viewer"
+about = "System and application logs showing errors, crashes and warnings."
+category = "system"
+kind = "tool"
+open = "eventvwr.msc"
+phrases = [
+  "why did my pc crash",
+  "blue screen logs",
+  "see error logs",
+]
+
+[[action]]
+id = "services"
+title = "Services"
+about = "Start, stop or disable background Windows services."
+category = "system"
+kind = "tool"
+open = "services.msc"
+phrases = [
+  "restart print spooler",
+  "disable a background service",
+]
+
+[[action]]
+id = "resource-monitor"
+title = "Resource Monitor"
+about = "Detailed live view of which processes use CPU, memory, disk and network."
+category = "system"
+kind = "tool"
+open = "resmon.exe"
+phrases = [
+  "which app is using my internet bandwidth",
+  "disk at 100 percent",
+]
+
+[[action]]
+id = "date-time"
+title = "Date & time"
+about = "Set the time zone, sync the clock and change date and time automatically."
+category = "system"
+kind = "settings"
+open = "ms-settings:dateandtime"
+phrases = [
+  "clock is wrong",
+  "change time zone",
+  "time not syncing",
+]
+
+[[action]]
+id = "language"
+title = "Language & region"
+about = "Windows display language, keyboard layouts and regional formats."
+category = "system"
+kind = "settings"
+open = "ms-settings:regionlanguage"
+phrases = [
+  "add a keyboard language",
+  "change windows language",
+  "keyboard layout changed by itself",
+]
+
+[[action]]
+id = "developers"
+title = "For developers"
+about = "Developer mode, file explorer options for developers, and terminal settings."
+category = "system"
+kind = "settings"
+open = "ms-settings:developers"
+phrases = [
+  "turn on developer mode",
+  "show file extensions",
+]
+
+# ───────────────────────── Accessibility ─────────────────────────
+
+[[action]]
+id = "text-size"
+title = "Text size (Accessibility)"
+about = "Make text bigger across Windows without changing scaling."
+category = "accessibility"
+kind = "settings"
+open = "ms-settings:easeofaccess-display"
+phrases = [
+  "make text bigger",
+  "font too small to read",
+]
+
+[[action]]
+id = "magnifier"
+title = "Magnifier"
+about = "Zoom in on parts of the screen."
+category = "accessibility"
+kind = "settings"
+open = "ms-settings:easeofaccess-magnifier"
+phrases = [
+  "zoom into screen",
+  "magnifier",
+]
+
+[[action]]
+id = "narrator"
+title = "Narrator"
+about = "Screen reader that reads text on the screen aloud."
+category = "accessibility"
+kind = "settings"
+open = "ms-settings:easeofaccess-narrator"
+phrases = [
+  "read screen aloud",
+  "turn off narrator",
+]
+
+[[action]]
+id = "mouse-pointer"
+title = "Mouse pointer & touch"
+about = "Change mouse pointer size and colour and touch indicator."
+category = "accessibility"
+kind = "settings"
+open = "ms-settings:easeofaccess-mousepointer"
+phrases = [
+  "bigger cursor",
+  "can't see mouse pointer",
+]
+
+[[action]]
+id = "captions"
+title = "Captions"
+about = "Live captions and caption style for audio and video."
+category = "accessibility"
+kind = "settings"
+open = "ms-settings:easeofaccess-closedcaptioning"
+phrases = [
+  "live captions",
+  "subtitles for audio",
+]
+
+# ───────────────────────── Gaming ─────────────────────────
+
+[[action]]
+id = "game-mode"
+title = "Game Mode"
+about = "Optimise the PC for gaming by turning off background activity."
+category = "gaming"
+kind = "settings"
+open = "ms-settings:gaming-gamemode"
+phrases = [
+  "games lagging",
+  "optimise for gaming",
+]
+
+[[action]]
+id = "game-bar"
+title = "Game Bar & captures"
+about = "Xbox Game Bar shortcuts and recording gameplay clips and screenshots."
+category = "gaming"
+kind = "settings"
+open = "ms-settings:gaming-gamebar"
+phrases = [
+  "record my screen",
+  "record gameplay",
+  "win+g not working",
+]
+
+# ───────────────────────── Repair & diagnostics ─────────────────────────
+
+[[action]]
+id = "speed-test"
+title = "Internet speed test"
+about = "Measure your download and upload speed in the browser (fast.com)."
+category = "network"
+kind = "settings"
+open = "https://fast.com"
+phrases = [
+  "internet is slow",
+  "check my internet speed",
+  "how many mbps am I getting",
+]
+
+[[action]]
+id = "battery-report"
+title = "Battery health report"
+about = "Create a detailed battery report showing design capacity versus current full charge capacity and usage history (powercfg /batteryreport)."
+category = "power"
+kind = "command"
+open = "cmd /k cd /d %USERPROFILE% && powercfg /batteryreport && start battery-report.html"
+phrases = [
+  "battery health",
+  "is my battery degraded",
+  "battery capacity",
+]
+
+[[action]]
+id = "disk-cleanup"
+title = "Disk Cleanup"
+about = "Classic tool that deletes temporary files, old Windows update files, the recycle bin and thumbnails."
+category = "storage"
+kind = "tool"
+open = "cleanmgr.exe"
+phrases = [
+  "delete windows update leftovers",
+  "clean system files",
+]
+
+[[action]]
+id = "system-restore"
+title = "System Restore"
+about = "Roll Windows system files and settings back to an earlier restore point without touching personal files."
+category = "update"
+kind = "tool"
+open = "rstrui.exe"
+phrases = [
+  "undo recent changes to my pc",
+  "go back to a restore point",
+  "pc broke after installing something",
+]
+
+[[action]]
+id = "memory-test"
+title = "Windows Memory Diagnostic"
+about = "Check the RAM for errors on the next restart."
+category = "system"
+kind = "tool"
+open = "mdsched.exe"
+phrases = [
+  "test my ram",
+  "random crashes memory problem",
+]
+
+[[action]]
+id = "repair-system-files"
+title = "Repair Windows system files (SFC)"
+about = "Run System File Checker as administrator to scan and repair corrupted Windows files (asks for admin permission)."
+category = "system"
+kind = "command"
+open = "powershell -NoProfile -Command Start-Process cmd -Verb RunAs -ArgumentList '/k sfc /scannow'"
+phrases = [
+  "corrupted system files",
+  "windows features broken",
+  "run sfc scannow",
+]
+
+[[action]]
+id = "keyboard-accessibility"
+title = "Sticky keys, Filter keys & on-screen keyboard"
+about = "Accessibility keyboard options: sticky keys, filter keys, toggle keys and the on-screen keyboard."
+category = "accessibility"
+kind = "settings"
+open = "ms-settings:easeofaccess-keyboard"
+phrases = [
+  "turn off sticky keys",
+  "keys repeating or ignored",
+  "on screen keyboard",
+]
+
+[[action]]
+id = "nearby-sharing"
+title = "Nearby sharing"
+about = "Share files and links wirelessly with nearby Windows PCs."
+category = "system"
+kind = "settings"
+open = "ms-settings:crossdevice"
+phrases = [
+  "send a file to another laptop nearby",
+  "share files wirelessly",
+]
