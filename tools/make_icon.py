@@ -1,4 +1,4 @@
-r"""Draw the app icon (smartsearch/assets/icon.png + icon.ico): a magnifier on a blue-violet tile.
+r"""Draw the app icon (glimpse/assets/icon.png + icon.ico): a magnifier on a blue-violet tile.
 
   .venv\Scripts\python.exe tools\make_icon.py
 """
@@ -8,7 +8,7 @@ import os
 
 from PIL import Image, ImageDraw, ImageFilter
 
-OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "smartsearch", "assets")
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "glimpse", "assets")
 
 
 def tile(px: int = 1024) -> Image.Image:

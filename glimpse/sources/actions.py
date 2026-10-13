@@ -1,4 +1,4 @@
-"""Windows settings, tools and fixes from catalog/actions.toml, plus live status widgets.
+"""Windows settings, tools and fixes from catalog/actions.toml, plus live status widgets and controls.
 
 Scoring (chosen with eval/run_actions_eval.py on 189 queries written apart from the catalog):
   joined  one vector of description + all example phrases        hit@1 0.715 hit@3 0.866
@@ -24,7 +24,7 @@ import tomllib
 
 import numpy as np
 
-from .. import config
+from .. import config, controls
 from ..embedder import QUERY, doc
 from .base import Result, Source, open_path, run_command
 
@@ -160,7 +160,14 @@ class ActionsSource(Source):
         if not result_ids:
             return None
         top = self.actions.get(result_ids[0].split(":", 1)[1], {})
-        return self._cached(top.get("category"))
+        w = self._cached(top.get("category"))
+        # live controls (volume, brightness, dark mode) are read fresh every time: they change outside the app
+        ctl = controls.controls_for(top.get("category"))
+        if not ctl:
+            return w
+        w = dict(w) if w else {"title": "Quick controls", "rows": [], "tone": "ok"}
+        w["controls"] = ctl
+        return w
 
     def warm(self) -> None:
         """Fill the widget cache (the netsh / WMI calls take ~1 s) so a query typed right after opening is instant."""

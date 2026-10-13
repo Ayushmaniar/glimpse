@@ -155,7 +155,7 @@ def index_one(store: Store, source: str, path: str, handle: Callable[[str], str]
 def walk(exts: set[str], min_size: int = 1) -> Iterator[tuple[str, float, int]]:
     """Yield (path, mtime, size) for files under the configured folders with one of `exts`."""
     skip = {d.lower() for d in config.get("exclude_dirs")}
-    own = os.path.normcase(config.ROOT)  # SmartSearch's own catalog/eval files would match every settings query
+    own = os.path.normcase(config.ROOT)  # Glimpse's own catalog/eval files would match every settings query
     seen: set[str] = set()
     for root in config.get("folders"):
         if not os.path.isdir(root):

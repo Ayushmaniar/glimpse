@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import sys
 
-from smartsearch import secretmask as sm
-from smartsearch.sources.walk import ext_of
+from glimpse import secretmask as sm
+from glimpse.sources.walk import ext_of
 
 FAKE_GOOGLE = "AIza" + "SyD3x9Kq7Lm2Np4Rt6Vw8Yz0Ab1Cd3Ef5Gh"
 

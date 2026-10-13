@@ -63,7 +63,7 @@ def _host_if_ok(url: str) -> str | None:
 
 def _read_rows(db_path: str, watermark: int) -> list[tuple]:
     """Rows newer than the watermark, newest first. The browser may hold the original open, so copy it."""
-    tmp = tempfile.mkdtemp(prefix="smartsearch-history-")
+    tmp = tempfile.mkdtemp(prefix="glimpse-history-")
     try:
         copy = os.path.join(tmp, "History")
         shutil.copy2(db_path, copy)

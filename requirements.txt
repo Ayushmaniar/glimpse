@@ -1,4 +1,4 @@
-# SmartSearch runtime (Windows 10/11 x64, Python 3.12). install.ps1 installs these with uv.
+# Glimpse runtime (Windows 10/11 x64, Python 3.12). install.ps1 installs these with uv.
 litert-lm==0.18.0
 numpy==2.5.4
 pillow==12.3.0

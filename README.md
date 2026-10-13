@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="smartsearch/assets/icon.png" width="112" alt="SmartSearch icon">
+  <img src="glimpse/assets/icon.png" width="112" alt="Glimpse icon">
 </p>
 
-<h1 align="center">SmartSearch</h1>
+<h1 align="center">Glimpse</h1>
 
 <p align="center">
   <b>Search your Windows PC by meaning. Privately.</b><br>
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/launch.mp4"><img src="docs/preview.gif" width="820" alt="SmartSearch in action"></a><br>
+  <a href="docs/launch.mp4"><img src="docs/preview.gif" width="820" alt="Glimpse in action"></a><br>
   <a href="docs/launch.mp4"><b>▶ Watch the 1-minute launch video</b></a>
 </p>
 
@@ -20,13 +20,14 @@
 ## Why
 
 You remember *what's in* a file, not what you named it. `IMG_4021.jpg`, `Scan0003.pdf` and
-`Recording (12).m4a` don't help. SmartSearch understands the content itself (text, pictures, speech
+`Recording (12).m4a` don't help. Glimpse understands the content itself (text, pictures, speech
 and video), so you can just ask for it:
 
 | You type | You get |
 |---|---|
 | `receipt from the sushi dinner` | The photo of the receipt. Text *inside* images is matched, no OCR |
 | `wifi keeps disconnecting` | The right Windows settings and fixes, plus a live check of your Wi-Fi and internet |
+| `my screen is too dim` · `no sound from speakers` | Display or Sound settings, with a **live brightness or volume slider** right in the results |
 | `voice note about the electricity bill` | The recording, found by **what was said**, opened at that moment |
 | `how much notice before I move out` | Page 2 of the lease PDF, with the matching sentence |
 | `my vaccine certificate` | A **scanned** PDF, found by what's printed on the page |
@@ -46,16 +47,16 @@ you're in** (including subfolders), like Explorer's own search box.
 **Windows 10 or 11, 64-bit.** No admin rights needed. Open **PowerShell** and paste:
 
 ```powershell
-irm https://raw.githubusercontent.com/Ayushmaniar/smartsearch/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Ayushmaniar/glimpse/main/install.ps1 | iex
 ```
 
 That's it. The installer:
 1. gets [uv](https://docs.astral.sh/uv/) and a private Python 3.12 (nothing is installed system-wide),
 2. installs the packages (~400 MB) and downloads the search model (485 MB, [EmbeddingGemma 2](https://huggingface.co/litert-community/embeddinggemma-2-740m-litert-lm), Apache-2.0),
-3. adds **SmartSearch** to the Start Menu, turns on *Start with Windows*, and starts it.
+3. adds **Glimpse** to the Start Menu, turns on *Start with Windows*, and starts it.
 
-Everything lives in `%LOCALAPPDATA%\SmartSearch`. Prefer not to pipe a script into PowerShell?
-[Download the ZIP](https://github.com/Ayushmaniar/smartsearch/archive/refs/heads/main.zip), unzip it anywhere,
+Everything lives in `%LOCALAPPDATA%\Glimpse`. Prefer not to pipe a script into PowerShell?
+[Download the ZIP](https://github.com/Ayushmaniar/glimpse/archive/refs/heads/main.zip), unzip it anywhere,
 and double-click **`install.bat`**.
 
 **Hardware.** Any PC with a DirectX 12 GPU (NVIDIA, AMD or Intel) runs the model on the GPU; others use
@@ -69,7 +70,7 @@ plus the index (roughly 1% of the size of what it indexes).
 
 | Key | Does |
 |---|---|
-| <kbd>Alt</kbd>+<kbd>Space</kbd> | Show / hide SmartSearch (falls back to <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd> if another app owns it) |
+| <kbd>Alt</kbd>+<kbd>Space</kbd> | Show / hide Glimpse (falls back to <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd> if another app owns it) |
 | <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> · <kbd>Enter</kbd> | Move · open |
 | <kbd>Shift</kbd>+<kbd>Space</kbd> | Quick Look: PDF pages, photos, the video frame, the passage in a document |
 | <kbd>Ctrl</kbd>+<kbd>Enter</kbd> | Show in folder |
@@ -102,7 +103,7 @@ picked up within seconds. The tray icon (bottom-right) shows progress and has *P
 
 ## Settings
 
-Edit `%LOCALAPPDATA%\SmartSearch\.data\settings.json` (created on first run; only the keys you change are stored):
+Edit `%LOCALAPPDATA%\Glimpse\.data\settings.json` (created on first run; only the keys you change are stored):
 
 ```json
 {
@@ -115,29 +116,29 @@ Edit `%LOCALAPPDATA%\SmartSearch\.data\settings.json` (created on first run; onl
 ```
 
 `voice_language` skips language detection (faster on CPU). `backend`: `auto`, `gpu` or `cpu`. All options
-with their defaults are in [`smartsearch/config.py`](smartsearch/config.py).
+with their defaults are in [`glimpse/config.py`](glimpse/config.py).
 
 ## Uninstall
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\SmartSearch\uninstall.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Glimpse\uninstall.ps1"
 ```
 
 This removes the app, its model, its index, the Start Menu shortcut and the startup entry. Your files are never touched.
 
 ## Troubleshooting
 
-- **Alt+Space does nothing:** another app (e.g. PowerToys Run) may own it. SmartSearch then uses
+- **Alt+Space does nothing:** another app (e.g. PowerToys Run) may own it. Glimpse then uses
   Ctrl+Shift+Space; the tray menu shows which hotkey is active.
-- **No window appears:** SmartSearch needs the Microsoft Edge WebView2 runtime, which ships with Windows 11
+- **No window appears:** Glimpse needs the Microsoft Edge WebView2 runtime, which ships with Windows 11
   and current Windows 10. Install it from [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/) if needed.
 - **"Model failed to load":** set `"backend": "cpu"` in settings.json and restart from the Start Menu.
-- **Anything else:** the log is at `%LOCALAPPDATA%\SmartSearch\.data\smartsearch.log`. Please
-  [open an issue](https://github.com/Ayushmaniar/smartsearch/issues) with the relevant lines.
+- **Anything else:** the log is at `%LOCALAPPDATA%\Glimpse\.data\glimpse.log`. Please
+  [open an issue](https://github.com/Ayushmaniar/glimpse/issues) with the relevant lines.
 
 ## How it works
 
-SmartSearch embeds text, images, video frames and speech into **one shared vector space** with Google's
+Glimpse embeds text, images, video frames and speech into **one shared vector space** with Google's
 [EmbeddingGemma 2](https://huggingface.co/google/embeddinggemma-2) (740M parameters, open weights) running
 through [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM), so a sentence can find a photo or a moment
 in a recording directly, without captions or transcripts. Documents use a **hybrid** of embeddings and BM25
@@ -151,18 +152,18 @@ The full design, every threshold and the evaluations behind them are in
 ## Development
 
 ```powershell
-git clone https://github.com/Ayushmaniar/smartsearch; cd smartsearch
+git clone https://github.com/Ayushmaniar/glimpse; cd glimpse
 .\install.bat                                              # sets up .venv and the model in place
-.venv\Scripts\python.exe -m smartsearch.app --browser     # no window: prints a URL to open
+.venv\Scripts\python.exe -m glimpse.app --browser     # no window: prints a URL to open
 .venv\Scripts\python.exe -m tests.test_ranking            # also: test_scope, test_time, test_fresh, test_secrets, ...
 ```
 
-The UI is plain HTML/CSS/JS in `smartsearch/ui/` (open `index.html` from disk for a mock-data version).
+The UI is plain HTML/CSS/JS in `glimpse/ui/` (open `index.html` from disk for a mock-data version).
 The launch video is code too: see [`video/`](video/README.md).
 
 ## Credits & license
 
-SmartSearch is [MIT licensed](LICENSE). It builds on EmbeddingGemma 2 (Google, Apache-2.0) via LiteRT-LM,
+Glimpse is [MIT licensed](LICENSE). It builds on EmbeddingGemma 2 (Google, Apache-2.0) via LiteRT-LM,
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (MIT) with OpenAI Whisper weights (MIT),
 [pywebview](https://pywebview.flowrl.com/), [SQLite FTS5](https://www.sqlite.org/fts5.html), PDFium
 (via pypdfium2), FFmpeg (via imageio-ffmpeg) and other open-source packages listed in `requirements.txt`.

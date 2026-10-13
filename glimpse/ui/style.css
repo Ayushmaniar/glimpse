@@ -1,4 +1,4 @@
-/* SmartSearch launcher. Colors are tokens on :root; dark mode follows the OS setting. */
+/* Glimpse launcher. Colors are tokens on :root; dark mode follows the OS setting. */
 
 :root {
   color-scheme: light dark;
@@ -451,6 +451,100 @@ body.debug .dbg { display: block; }
 .w-value.ok { color: var(--ok); }
 .w-value.warn { color: var(--warn); }
 .w-value.bad { color: var(--bad); }
+
+/* live controls inside a widget: sliders and switches that change the setting right away */
+.w-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin-top: 2px;
+}
+.widget-rows + .w-controls {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.ctl {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 30px;
+  font-size: 12.5px;
+}
+.ctl-slider { flex: 1 1 260px; min-width: 220px; }
+.ctl-icon { flex: none; width: 18px; text-align: center; font-family: var(--emoji-font); font-size: 14px; }
+.ctl-label { flex: none; color: var(--muted); white-space: nowrap; }
+.ctl-track {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 90px;
+  height: 22px;
+  cursor: pointer;
+  touch-action: none;
+}
+.ctl-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 9px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-2);
+}
+.ctl-fill {
+  position: absolute;
+  left: 0;
+  top: 9px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.ctl-knob {
+  position: absolute;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--accent), 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s ease;
+}
+.ctl-slider:hover .ctl-knob,
+.ctl-slider.active .ctl-knob { transform: scale(1.15); }
+.ctl-value {
+  flex: none;
+  min-width: 38px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.ctl-switch {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.ctl-switch .ctl-dot {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.ctl-switch.on { background: var(--accent); box-shadow: none; }
+.ctl-switch.on .ctl-dot { transform: translateX(16px); background: #fff; }
 
 /* shared item styling */
 .item {

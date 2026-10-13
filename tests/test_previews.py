@@ -12,13 +12,13 @@ import tempfile
 import numpy as np
 
 TMP = tempfile.mkdtemp(prefix="ss_prev_")
-os.environ["SMARTSEARCH_DATA"] = os.path.join(TMP, "data")
+os.environ["GLIMPSE_DATA"] = os.path.join(TMP, "data")
 
 from PIL import Image  # noqa: E402
 
-from smartsearch import previews  # noqa: E402
-from smartsearch.store import Store  # noqa: E402
-from smartsearch.sources import walk as _walk  # noqa: E402
+from glimpse import previews  # noqa: E402
+from glimpse.store import Store  # noqa: E402
+from glimpse.sources import walk as _walk  # noqa: E402
 _walk.on_battery = lambda: False  # index even when the laptop runs on battery
 
 

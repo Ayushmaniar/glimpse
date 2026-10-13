@@ -1,6 +1,6 @@
 """Which folder is open in the File Explorer window you were in when you pressed the hotkey.
 
-Opening SmartSearch from Explorer offers "search this folder", like Explorer's own search box.
+Opening Glimpse from Explorer offers "search this folder", like Explorer's own search box.
 The desktop counts as the Desktop folder. Explorer pages that aren't folders (Home, This PC,
 Gallery, Network) give None.
 
@@ -117,7 +117,7 @@ def _fs(path) -> str | None:
 
 
 def coverage(folder: str) -> str:
-    """'full' if SmartSearch indexes this folder, 'partial' if it contains indexed folders
+    """'full' if Glimpse indexes this folder, 'partial' if it contains indexed folders
     (e.g. your user folder), 'none' otherwise (only file names are searched there, live)."""
     from .sources import walk
     if walk.wanted(os.path.join(folder, "x")):

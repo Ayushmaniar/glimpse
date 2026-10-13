@@ -11,17 +11,17 @@ import threading
 import time
 
 TMP = tempfile.mkdtemp(prefix="ss_fresh_")
-os.environ["SMARTSEARCH_DATA"] = os.path.join(TMP, "data")
+os.environ["GLIMPSE_DATA"] = os.path.join(TMP, "data")
 HOME = os.path.join(TMP, "home")
 os.makedirs(HOME)
 
 from PIL import Image, ImageDraw  # noqa: E402
 
-from smartsearch import config, embedder, fresh  # noqa: E402
-from smartsearch.sources.files import FilesSource  # noqa: E402
-from smartsearch.sources.images import ImagesSource  # noqa: E402
-from smartsearch.store import Store  # noqa: E402
-from smartsearch.sources import walk as _walk  # noqa: E402
+from glimpse import config, embedder, fresh  # noqa: E402
+from glimpse.sources.files import FilesSource  # noqa: E402
+from glimpse.sources.images import ImagesSource  # noqa: E402
+from glimpse.store import Store  # noqa: E402
+from glimpse.sources import walk as _walk  # noqa: E402
 _walk.on_battery = lambda: False  # index even when the laptop runs on battery
 
 config.update({"folders": [HOME]})

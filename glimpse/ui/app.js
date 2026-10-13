@@ -1,5 +1,5 @@
 /*
- * SmartSearch launcher UI. Plain JS, no dependencies, no network except the local API.
+ * Glimpse launcher UI. Plain JS, no dependencies, no network except the local API.
  *
  * Mock mode (canned data, no server) runs when the token placeholder is still present
  * (index.html opened from disk) or the URL has ?mock=1.
@@ -408,8 +408,125 @@
       rows.appendChild(el("span", "w-label", row[0]));
       rows.appendChild(el("span", "w-value " + normTone(row[2]), row[1]));
     });
-    box.appendChild(rows);
+    if (rows.firstChild) box.appendChild(rows);
+    if (Array.isArray(w.controls) && w.controls.length) {
+      var ctl = el("div", "w-controls");
+      w.controls.forEach(function (c) {
+        if (c && typeof c === "object") ctl.appendChild(c.kind === "toggle" ? renderToggle(c) : renderSlider(c));
+      });
+      box.appendChild(ctl);
+    }
     return box;
+  }
+
+  /* ---------- live controls (volume, brightness, dark mode) ----------
+     Changes go to /api/control as you drag: at most one request in flight, and the latest value always wins.
+     The search box keeps focus (the results area swallows mousedown), so these use pointer events. */
+  function controlSender(id, onState) {
+    var busy = false, next = null;
+    function flush() {
+      if (busy || next === null) return;
+      var v = next;
+      next = null;
+      busy = true;
+      api("/api/control", { json: { id: id, value: v } }).then(function (s) {
+        busy = false;
+        if (next === null && s) onState(s);
+        flush();
+      }, function (err) {
+        busy = false;
+        next = null;
+        toast(err && err.message ? err.message : "Couldn't change that setting");
+      });
+    }
+    return function (v) { next = v; flush(); };
+  }
+
+  function renderSlider(c) {
+    var min = typeof c.min === "number" ? c.min : 0, max = typeof c.max === "number" ? c.max : 100;
+    var row = el("div", "ctl ctl-slider");
+    row.appendChild(el("span", "ctl-icon", c.icon || ""));
+    row.appendChild(el("span", "ctl-label", c.label || c.id));
+    var track = el("div", "ctl-track");
+    track.setAttribute("role", "slider");
+    track.setAttribute("aria-label", c.label || c.id);
+    track.setAttribute("aria-valuemin", String(min));
+    track.setAttribute("aria-valuemax", String(max));
+    var fill = el("div", "ctl-fill"), knob = el("div", "ctl-knob");
+    track.appendChild(fill);
+    track.appendChild(knob);
+    row.appendChild(track);
+    var out = el("span", "ctl-value");
+    row.appendChild(out);
+    var value = Number(c.value) || 0, dragging = false;
+    function show(v) {
+      value = Math.max(min, Math.min(max, Math.round(v)));
+      var f = (value - min) / ((max - min) || 1);
+      fill.style.width = (f * 100) + "%";
+      knob.style.left = (f * 100) + "%";
+      out.textContent = value + (c.unit || "");
+      track.setAttribute("aria-valuenow", String(value));
+    }
+    var send = controlSender(c.id, function (s) { if (!dragging) show(Number(s.value) || 0); });
+    function at(e) {
+      var r = track.getBoundingClientRect();
+      return min + (max - min) * Math.max(0, Math.min(1, (e.clientX - r.left) / (r.width || 1)));
+    }
+    track.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = true;
+      row.classList.add("active");
+      try { track.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      show(at(e));
+      send(value);
+    });
+    track.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      var before = value;
+      show(at(e));
+      if (value !== before) send(value);
+    });
+    function end() {
+      if (!dragging) return;
+      dragging = false;
+      row.classList.remove("active");
+      focusInput();
+    }
+    track.addEventListener("pointerup", end);
+    track.addEventListener("pointercancel", end);
+    row.addEventListener("click", function (e) { e.stopPropagation(); });
+    row.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      show(value + (e.deltaY < 0 ? 5 : -5));
+      send(value);
+    }, { passive: false });
+    show(value);
+    return row;
+  }
+
+  function renderToggle(c) {
+    var row = el("div", "ctl ctl-toggle");
+    row.appendChild(el("span", "ctl-icon", c.icon || ""));
+    row.appendChild(el("span", "ctl-label", c.label || c.id));
+    var sw = el("button", "ctl-switch");
+    sw.type = "button";
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-label", c.label || c.id);
+    sw.appendChild(el("span", "ctl-dot"));
+    row.appendChild(sw);
+    var on = !!c.value;
+    function show(v) { on = !!v; sw.classList.toggle("on", on); sw.setAttribute("aria-checked", on ? "true" : "false"); }
+    var send = controlSender(c.id, function (s) { show(s.value); });
+    sw.addEventListener("mousedown", pd);
+    sw.addEventListener("click", function (e) {
+      e.stopPropagation();
+      show(!on);
+      send(on);
+    });
+    show(on);
+    return row;
   }
 
   function renderSections(sections, emptyText) {
@@ -1738,7 +1855,7 @@
     b.appendChild(el("span", "scope-key", "Tab"));
     var names = scope.coverage === "none";
     b.title = scope.on
-      ? scope.folder + (names ? "\nNot indexed by SmartSearch: file names only" : "") + "\nTab: search This PC instead"
+      ? scope.folder + (names ? "\nNot indexed by Glimpse: file names only" : "") + "\nTab: search This PC instead"
       : "Searching everything. Tab: search only " + scope.name;
     els.input.setAttribute("placeholder", scope.on
       ? (names ? "Search file names in " : "Search in ") + scope.name + "\u2026"
@@ -2263,6 +2380,9 @@
           ["Wi-Fi", "HomeNet-5G \u00b7 38% signal", "warn"],
           ["Internet", "Reachable", "ok"],
           ["Adapter", "Intel Wi-Fi 6E AX211"]
+        ], controls: [
+          { id: "brightness", kind: "slider", label: "Brightness", icon: "\u2600\ufe0f", value: 40, min: 0, max: 100, unit: "%" },
+          { id: "dark", kind: "toggle", label: "Dark mode", icon: "\ud83c\udf19", value: true }
         ] },
         results: [
           mockItem("settings", "wifi", "Wi-Fi settings", { sub: "Networks, saved profiles, airplane mode",
@@ -2432,6 +2552,7 @@
     if (path === "/api/run") return mockRun(String(json.id || ""), json.op || "open");
     if (path === "/api/transcribe") return { text: "wifi keeps disconnecting", ms: 812 };
     if (path === "/api/hide") return { ok: true };
+    if (path === "/api/control") return { id: json.id, value: json.value };
     throw new Error("mock: no route " + path);
   }
 

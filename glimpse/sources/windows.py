@@ -22,7 +22,7 @@ GWL_EXSTYLE, WS_EX_TOOLWINDOW, WS_EX_APPWINDOW = -20, 0x80, 0x40000
 GW_OWNER, DWMWA_CLOAKED = 4, 14
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 SW_RESTORE, VK_MENU, KEYEVENTF_KEYUP = 9, 0x12, 0x0002
-OWN_TITLE = "SmartSearch"  # never list the launcher's own window
+OWN_TITLE = "Glimpse"  # never list the launcher's own window
 CACHE_MAX = 500
 
 EnumProc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)

@@ -12,8 +12,8 @@ from collections import defaultdict
 
 import numpy as np
 
-from smartsearch import embedder as E
-from smartsearch.sources.actions import load_catalog
+from glimpse import embedder as E
+from glimpse.sources.actions import load_catalog
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -108,8 +108,8 @@ def main() -> None:
 
 def production(cases) -> None:
     """The ranker the app actually ships (ActionsSource: hybrid - hubness, 256-d int8 store)."""
-    from smartsearch.sources.actions import ActionsSource
-    from smartsearch.store import Store
+    from glimpse.sources.actions import ActionsSource
+    from glimpse.store import Store
 
     emb = E.Embedder()
     src = ActionsSource(Store())

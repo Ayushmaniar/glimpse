@@ -49,7 +49,7 @@ def server():
             return port, re.search(r'TOKEN="([^"]+)"', page).group(1)
         except Exception:
             continue
-    raise SystemExit("SmartSearch is not running")
+    raise SystemExit("Glimpse is not running")
 
 
 def _ports():

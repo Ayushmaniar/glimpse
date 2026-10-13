@@ -10,13 +10,13 @@ import sys
 import tempfile
 
 TMP = tempfile.mkdtemp(prefix="ss_scope_")
-os.environ["SMARTSEARCH_DATA"] = os.path.join(TMP, "data")
+os.environ["GLIMPSE_DATA"] = os.path.join(TMP, "data")
 HOME = os.path.join(TMP, "home")
 TRIP, WORK, OUTSIDE = (os.path.join(HOME, "trip"), os.path.join(HOME, "work"), os.path.join(TMP, "elsewhere"))
 
-from smartsearch import config  # noqa: E402
-from smartsearch.core import Engine  # noqa: E402
-from smartsearch.sources import walk as _walk  # noqa: E402
+from glimpse import config  # noqa: E402
+from glimpse.core import Engine  # noqa: E402
+from glimpse.sources import walk as _walk  # noqa: E402
 _walk.on_battery = lambda: False  # index even when the laptop runs on battery
 
 FILES = {

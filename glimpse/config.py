@@ -6,15 +6,16 @@ import os
 import threading
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.environ.get("SMARTSEARCH_DATA") or os.path.join(ROOT, ".data")
+# SMARTSEARCH_DATA: the name before the rename to Glimpse, still honoured.
+DATA_DIR = os.environ.get("GLIMPSE_DATA") or os.environ.get("SMARTSEARCH_DATA") or os.path.join(ROOT, ".data")
 MODEL_REPO = "litert-community/embeddinggemma-2-740m-litert-lm"  # Hugging Face, Apache-2.0, not gated
 MODEL_PATH = os.path.join(ROOT, "models", "embeddinggemma-2-740m.litertlm")
 MODEL_CACHE_DIR = os.path.join(ROOT, "models", "cache")
 DB_PATH = os.path.join(DATA_DIR, "index.sqlite")
 THUMB_DIR = os.path.join(DATA_DIR, "thumbs")
 SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
-CATALOG_PATH = os.path.join(ROOT, "smartsearch", "catalog", "actions.toml")
-UI_DIR = os.path.join(ROOT, "smartsearch", "ui")
+CATALOG_PATH = os.path.join(ROOT, "glimpse", "catalog", "actions.toml")
+UI_DIR = os.path.join(ROOT, "glimpse", "ui")
 
 _HOME = os.path.expanduser("~")
 

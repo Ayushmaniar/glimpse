@@ -17,3 +17,6 @@ video/frames/
 video/_built.html
 
 *.log
+
+# Your real photos and clips used to render the launch video: never committed
+video/private/

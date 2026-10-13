@@ -1,4 +1,4 @@
-# How SmartSearch works
+# How Glimpse works
 
 The technical companion to the [README](../README.md): what is indexed and when, how results are ranked and
 cut, and the measurements behind each number. Measurements were taken on the development laptop
@@ -7,7 +7,7 @@ cut, and the measurements behind each number. Measurements were taken on the dev
 ## Using it
 
 Alt+Space shows or hides the window. If Alt+Space is taken, it falls back to Ctrl+Shift+Space, then
-Alt+Shift+Space (see `.data\smartsearch.log`). It opens as just a search bar and grows as results arrive.
+Alt+Shift+Space (see `.data\glimpse.log`). It opens as just a search bar and grows as results arrive.
 Inside the window: ↑↓←→ move, Enter opens, Ctrl+Enter shows in folder, **Shift+Space previews** (PDF pages
 with ←/→, photos, the video frame, the passage around a document or code hit), Ctrl+1…9 jump to a section,
 Ctrl+M voice, Ctrl+D debug scores, Esc closes the preview, then clears the query, then hides.
@@ -19,7 +19,7 @@ and the bar shows a **📁 Folder** chip, like Explorer's own search box. Result
 that folder **and all its subfolders** (settings, emoji and windows are hidden). The folder's whole tree is listed in
 the background as the launcher opens (220k files in 0.9 s on the development laptop; until then a breadth-first walk), and
 file names are matched against it on every keystroke (~80 ms), so any
-file type is found by name (zip, exe, installers), even in folders SmartSearch doesn't index ("Search file names
+file type is found by name (zip, exe, installers), even in folders Glimpse doesn't index ("Search file names
 in …"). **Tab** (or a click on the chip) switches between the folder and **This PC**. Windows 11 Explorer tabs
 work: the active tab's folder is used.
 
@@ -27,7 +27,7 @@ The **tray icon** (magnifier) shows indexing progress and has Open, Pause indexi
 (a per-user Run entry, off until you tick it), Open log and Quit. The backlog also pauses by itself on battery
 (`pause_on_battery`) and lets the laptop sleep while paused; new files are still indexed (a few files are cheap).
 
-For development, `.venv\Scripts\python.exe -m smartsearch.app --browser` prints a URL instead of opening a window.
+For development, `.venv\Scripts\python.exe -m glimpse.app --browser` prints a URL instead of opening a window.
 
 **What it indexes:** `Documents, Desktop, Downloads, Pictures, Videos, Music` (edit `folders` in
 `.data\settings.json`; OneDrive folders work too). The first index runs in two passes: files changed in the
@@ -53,7 +53,7 @@ drives): hourly (`rescan_minutes`), or every 15 min if the watcher can't start. 
 (~5–10 s of disk time per source here), which is why it is not the main mechanism. With **Start with Windows** on,
 the only catch-up scan is the one at logon.
 
-Skipped on purpose: OneDrive files that are cloud-only (opening them would download them), SmartSearch's own
+Skipped on purpose: OneDrive files that are cloud-only (opening them would download them), Glimpse's own
 folder, `node_modules`/`.git`/venvs/`AppData`, and hidden folders. Chunk budget per file: machine data
 (`json, csv, log, xml, yaml, toml, ini`) and text files over 3 MB → first 2 chunks only (enough to find the file);
 code and HTML → 60 chunks; prose, PDFs, Word and slides → 200.
@@ -233,7 +233,7 @@ Next, in rough order of value:
 ## Layout
 
 ```
-smartsearch/
+glimpse/
   app.py          window (pywebview) + Alt+Space hotkey + single instance
   server.py       127.0.0.1 HTTP API (token-protected) + UI files
   core.py         sources, background indexer, section ranking

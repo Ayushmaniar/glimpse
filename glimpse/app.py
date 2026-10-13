@@ -1,7 +1,7 @@
-"""SmartSearch launcher: local server + frameless window + global hotkey.
+"""Glimpse launcher: local server + frameless window + global hotkey.
 
-  .venv\\Scripts\\python.exe -m smartsearch.app            launcher window (Alt+Space toggles)
-  .venv\\Scripts\\python.exe -m smartsearch.app --browser  no window; prints a URL to open in a browser
+  .venv\\Scripts\\python.exe -m glimpse.app            launcher window (Alt+Space toggles)
+  .venv\\Scripts\\python.exe -m glimpse.app --browser  no window; prints a URL to open in a browser
 """
 from __future__ import annotations
 
@@ -15,10 +15,10 @@ import sys
 import threading
 import time
 
-from . import config, explorer, server, tray, voice
+from . import autostart, config, explorer, server, tray, voice
 from .core import Engine
 
-log = logging.getLogger("smartsearch")
+log = logging.getLogger("glimpse")
 
 WIDTH, BAR_HEIGHT = 780, 68
 
@@ -93,7 +93,7 @@ def as_tool_window(hwnd: int) -> None:
 
 
 def single_instance() -> bool:
-    ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\SmartSearchLauncher")
+    ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\GlimpseLauncher")
     return ctypes.windll.kernel32.GetLastError() != 183  # ERROR_ALREADY_EXISTS
 
 
@@ -107,7 +107,7 @@ def main() -> None:
     os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")  # model downloads on Windows without symlinks
     os.makedirs(config.DATA_DIR, exist_ok=True)
     handlers: list[logging.Handler] = [
-        logging.FileHandler(os.path.join(config.DATA_DIR, "smartsearch.log"), encoding="utf-8")]
+        logging.FileHandler(os.path.join(config.DATA_DIR, "glimpse.log"), encoding="utf-8")]
     if sys.stderr:  # None under pythonw.exe
         handlers.append(logging.StreamHandler(sys.stderr))
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -117,8 +117,9 @@ def main() -> None:
     threading.excepthook = lambda a: log.error("thread %s crashed", a.thread.name if a.thread else "?",
                                                exc_info=(a.exc_type, a.exc_value, a.exc_traceback))
     if not single_instance():
-        print("SmartSearch is already running — press its hotkey (see .data/smartsearch.log)")
+        print("Glimpse is already running — press its hotkey (see .data/glimpse.log)")
         return
+    autostart.migrate()  # a "Start with Windows" entry left over from the SmartSearch name
 
     engine = Engine()
     if args.no_index:
@@ -130,7 +131,7 @@ def main() -> None:
     voice.warm_up_in_background()
 
     if args.browser:
-        print(f"SmartSearch running at {url}", flush=True)
+        print(f"Glimpse running at {url}", flush=True)
         try:
             while True:
                 time.sleep(3600)
@@ -143,7 +144,7 @@ def main() -> None:
     # Drag by the bar's empty space, the grip and the footer (class pywebview-drag-region). Only the element
     # itself counts, so selecting text in the search box or clicking a result never moves the window.
     webview.settings["DRAG_REGION_DIRECT_TARGET_ONLY"] = True
-    win = webview.create_window("SmartSearch", url, width=WIDTH, height=BAR_HEIGHT, frameless=True, on_top=True,
+    win = webview.create_window("Glimpse", url, width=WIDTH, height=BAR_HEIGHT, frameless=True, on_top=True,
                                 easy_drag=False, resizable=True, background_color="#14161b")
     state = {"visible": True}
 
@@ -220,12 +221,12 @@ def main() -> None:
     def started() -> None:
         place()
         win.events.shown.wait(15)
-        for hwnd in own_windows("SmartSearch"):
+        for hwnd in own_windows("Glimpse"):
             as_tool_window(hwnd)
         threading.Thread(target=hotkey_loop, args=(config.get("hotkey"), toggle, lambda spec: hotkey.update(spec=spec)),
                          name="hotkey", daemon=True).start()
         tray.start(engine, show, quit_app, hotkey)
-        log.info("SmartSearch ready")
+        log.info("Glimpse ready")
 
     webview.start(started, gui="edgechromium", private_mode=False,
                   storage_path=os.path.join(config.DATA_DIR, "webview"))

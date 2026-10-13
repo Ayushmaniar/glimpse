@@ -1,27 +1,30 @@
-# SmartSearch installer for Windows 10/11 (x64). No admin rights needed.
+# Glimpse installer for Windows 10/11 (x64). No admin rights needed.
 #
 #   One line, in PowerShell:
-#     irm https://raw.githubusercontent.com/Ayushmaniar/smartsearch/main/install.ps1 | iex
+#     irm https://raw.githubusercontent.com/Ayushmaniar/glimpse/main/install.ps1 | iex
 #   Or from a downloaded copy of the repo:
 #     double-click install.bat   (or: powershell -ExecutionPolicy Bypass -File install.ps1)
 #
 # What it does: installs uv (Astral's Python manager) if missing, a private Python 3.12 and the
 # packages in requirements.txt, downloads the search model (485 MB), adds a Start Menu shortcut,
-# turns on "Start with Windows" and starts SmartSearch. Everything stays in one folder:
-#   %LOCALAPPDATA%\SmartSearch   (or the repo folder you ran it from)
+# turns on "Start with Windows" and starts Glimpse. Everything stays in one folder:
+#   %LOCALAPPDATA%\Glimpse   (or the repo folder you ran it from)
 #
 # Options (environment variables, set before running):
-#   $env:SMARTSEARCH_DIR = "D:\Apps\SmartSearch"   install somewhere else
-#   $env:SMARTSEARCH_NO_AUTOSTART = "1"            don't start with Windows
-#   $env:SMARTSEARCH_NO_LAUNCH = "1"               don't start it at the end
-#   $env:SMARTSEARCH_NO_SHORTCUT = "1"             no Start Menu shortcut
+#   $env:GLIMPSE_DIR = "D:\Apps\Glimpse"     install somewhere else
+#   $env:GLIMPSE_NO_AUTOSTART = "1"          don't start with Windows
+#   $env:GLIMPSE_NO_LAUNCH = "1"             don't start it at the end
+#   $env:GLIMPSE_NO_SHORTCUT = "1"           no Start Menu shortcut
+#
+# Glimpse used to be called SmartSearch. An install in %LOCALAPPDATA%\SmartSearch is moved over:
+# its index, settings, thumbnails and model come along, so nothing is downloaded or indexed again.
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"   # Invoke-WebRequest is many times faster without the progress bar
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
 $env:HF_HUB_DISABLE_SYMLINKS_WARNING = "1"  # Windows without Developer Mode: the cache copies instead; harmless
-$Repo = "Ayushmaniar/smartsearch"
+$Repo = "Ayushmaniar/glimpse"
 $Branch = "main"
 
 function Say($msg) { Write-Host "  $msg" }
@@ -35,47 +38,111 @@ function Native([string]$exe, [string[]]$argv) {
     try { & $exe @argv 2>&1 | ForEach-Object { Say "$_" } } finally { $ErrorActionPreference = $old }
     return $LASTEXITCODE
 }
+# Stop running copies picked by $match (a filter on Win32_Process). The .venv's pythonw.exe is only a
+# launcher: the app itself runs in its child (the base Python), which holds the index open.
+function Stop-Copies([scriptblock]$match, [string]$label) {
+    try {
+        $all = @(Get-CimInstance Win32_Process -Filter "Name = 'pythonw.exe' OR Name = 'python.exe'" -ErrorAction SilentlyContinue)
+        $ids = @($all | Where-Object $match | ForEach-Object { $_.ProcessId })
+        $ids += @($all | Where-Object { $ids -contains $_.ParentProcessId } | ForEach-Object { $_.ProcessId })
+        foreach ($id in ($ids | Select-Object -Unique)) {
+            Say "Stopping the running $label (pid $id)"
+            Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
+        }
+        if ($ids.Count) { Start-Sleep -Milliseconds 800 }   # let Windows release its file handles
+    } catch { Say "(could not stop the running $label`: $($_.Exception.Message))" }
+}
 
 Write-Host ""
-Write-Host "  SmartSearch - search your PC by meaning, privately" -ForegroundColor White
+Write-Host "  Glimpse - search your PC by meaning, privately" -ForegroundColor White
 Write-Host "  ----------------------------------------------------"
 
 # ---- checks -------------------------------------------------------------------------------------
-if (-not [Environment]::Is64BitOperatingSystem) { Fail "SmartSearch needs 64-bit Windows." }
+if (-not [Environment]::Is64BitOperatingSystem) { Fail "Glimpse needs 64-bit Windows." }
 if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64" -or $env:PROCESSOR_ARCHITEW6432 -eq "ARM64") {
     Fail "Windows on ARM is not supported yet (the model runtime ships for x64 only)."
 }
-if ([Environment]::OSVersion.Version.Major -lt 10) { Fail "SmartSearch needs Windows 10 or 11." }
+if ([Environment]::OSVersion.Version.Major -lt 10) { Fail "Glimpse needs Windows 10 or 11." }
 
 # ---- where ------------------------------------------------------------------------------------
 $here = $null
-if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "smartsearch\app.py"))) { $here = $PSScriptRoot }
-if ($env:SMARTSEARCH_DIR) { $Dir = $env:SMARTSEARCH_DIR }
+if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "glimpse\app.py"))) { $here = $PSScriptRoot }
+if ($env:GLIMPSE_DIR) { $Dir = $env:GLIMPSE_DIR }
 elseif ($here) { $Dir = $here }
-else { $Dir = Join-Path $env:LOCALAPPDATA "SmartSearch" }
+else { $Dir = Join-Path $env:LOCALAPPDATA "Glimpse" }
 $Dir = [IO.Path]::GetFullPath($Dir)
 
-# A running copy would lock files we are about to replace.
-Get-CimInstance Win32_Process -Filter "Name = 'pythonw.exe' OR Name = 'python.exe'" -ErrorAction SilentlyContinue |
-    Where-Object { $_.CommandLine -and $_.CommandLine -like "*smartsearch*" -and $_.ExecutablePath -like "$Dir*" } |
-    ForEach-Object { Say "Stopping the running SmartSearch (pid $($_.ProcessId))"; Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+# A running copy would lock files we are about to replace (smartsearch: a copy from before the rename).
+Stop-Copies {
+    $_.CommandLine -and ($_.CommandLine -like "*glimpse*" -or $_.CommandLine -like "*smartsearch*") -and
+    (($_.ExecutablePath -and $_.ExecutablePath -like "$Dir\*") -or $_.CommandLine -like "*$Dir*")
+} "Glimpse"
+
+# ---- moving over from SmartSearch (the old name) ------------------------------------------------
+# Its Start Menu shortcut and "Start with Windows" entry would start a copy that is about to go away.
+$runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+if (Get-ItemProperty -Path $runKey -Name "SmartSearch" -ErrorAction SilentlyContinue) {
+    Remove-ItemProperty -Path $runKey -Name "SmartSearch" -ErrorAction SilentlyContinue
+    Say "Removed the old SmartSearch 'Start with Windows' entry"
+}
+$oldLnk = Join-Path ([Environment]::GetFolderPath("Programs")) "SmartSearch.lnk"
+if (Test-Path $oldLnk) { Remove-Item $oldLnk -Force -ErrorAction SilentlyContinue; Say "Removed the old SmartSearch Start Menu shortcut" }
+
+$OldDir = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA "SmartSearch"))
+if ((Test-Path $OldDir) -and ($OldDir -ne $Dir)) {
+    Step "Moving SmartSearch's index, settings and model to $Dir"
+    Stop-Copies { ($_.ExecutablePath -and $_.ExecutablePath -like "$OldDir\*") -or ($_.CommandLine -and $_.CommandLine -like "*$OldDir*") } "SmartSearch"
+    New-Item -ItemType Directory -Force -Path $Dir | Out-Null
+    $kept = $false   # something could not be moved: leave the old folder alone
+    $sameDrive = [IO.Path]::GetPathRoot($OldDir) -eq [IO.Path]::GetPathRoot($Dir)   # else copy (Move-Item can't)
+    foreach ($name in @(".data", "models")) {
+        $from = Join-Path $OldDir $name
+        if (-not (Test-Path -LiteralPath $from)) { continue }
+        $to = Join-Path $Dir $name
+        New-Item -ItemType Directory -Force -Path $to | Out-Null
+        $haveIndex = Test-Path -LiteralPath (Join-Path $to "index.sqlite")
+        foreach ($item in @(Get-ChildItem -LiteralPath $from -Force)) {
+            $dest = Join-Path $to $item.Name
+            if (Test-Path -LiteralPath $dest) { continue }   # already here (a Glimpse install that has run before)
+            if ($haveIndex -and $item.Name -like "index.sqlite*") { continue }   # never mix two indexes' journals
+            try {
+                if ($sameDrive) { Move-Item -LiteralPath $item.FullName -Destination $dest -Force -ErrorAction Stop }
+                else { Copy-Item -LiteralPath $item.FullName -Destination $dest -Recurse -Force -ErrorAction Stop }
+            }
+            catch {
+                $kept = $true
+                Say "(could not move $($item.FullName): $($_.Exception.Message))"
+            }
+        }
+    }
+    if ($kept) {
+        Say "Left $OldDir in place; delete it by hand once Glimpse works."
+    } else {
+        Remove-Item -Recurse -Force $OldDir -ErrorAction SilentlyContinue
+        if (Test-Path $OldDir) { Say "Some old files were in use; delete $OldDir by hand after a restart." }
+        else { Say "Removed $OldDir" }
+    }
+}
 
 # ---- code -------------------------------------------------------------------------------------
 if ($here -and ($Dir -eq [IO.Path]::GetFullPath($here))) {
     Step "Installing in place: $Dir"
 } else {
-    Step "Downloading SmartSearch into $Dir"
-    $tmp = Join-Path $env:TEMP ("smartsearch-" + [Guid]::NewGuid().ToString("N"))
+    Step "Downloading Glimpse into $Dir"
+    $tmp = Join-Path $env:TEMP ("glimpse-" + [Guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory -Path $tmp | Out-Null
     try {
         $zip = Join-Path $tmp "src.zip"
         Invoke-WebRequest -UseBasicParsing "https://github.com/$Repo/archive/refs/heads/$Branch.zip" -OutFile $zip
         Expand-Archive -Path $zip -DestinationPath $tmp -Force
-        $src = Get-ChildItem -Path $tmp -Directory | Where-Object { Test-Path (Join-Path $_.FullName "smartsearch\app.py") } | Select-Object -First 1
-        if (-not $src) { Fail "The download did not contain SmartSearch." }
+        $src = Get-ChildItem -Path $tmp -Directory | Where-Object { Test-Path (Join-Path $_.FullName "glimpse\app.py") } | Select-Object -First 1
+        if (-not $src) { Fail "The download did not contain Glimpse." }
         New-Item -ItemType Directory -Force -Path $Dir | Out-Null
         # Update the code; keep the index (.data), the model (models) and the Python environment (.venv).
-        if (Test-Path (Join-Path $Dir "smartsearch")) { Remove-Item -Recurse -Force (Join-Path $Dir "smartsearch") }
+        if (Test-Path (Join-Path $Dir "glimpse")) { Remove-Item -Recurse -Force (Join-Path $Dir "glimpse") }
+        foreach ($old in @("smartsearch", "SmartSearch.bat")) {   # the code under its old name
+            if (Test-Path (Join-Path $Dir $old)) { Remove-Item -Recurse -Force (Join-Path $Dir $old) -ErrorAction SilentlyContinue }
+        }
         Get-ChildItem -Path $src.FullName -Force | Copy-Item -Destination $Dir -Recurse -Force
     } finally {
         Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
@@ -119,37 +186,37 @@ if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
 
 # ---- model ------------------------------------------------------------------------------------
 Step "Search model (EmbeddingGemma 2, 485 MB, Apache-2.0)"
-$get = "import os; from smartsearch import config; from huggingface_hub import hf_hub_download as d; " +
+$get = "import os; from glimpse import config; from huggingface_hub import hf_hub_download as d; " +
        "p = config.MODEL_PATH; print('already here') if os.path.exists(p) else " +
        "print('saved to', d(config.MODEL_REPO, os.path.basename(p), local_dir=os.path.dirname(p)))"
-if ((Native $py @("-c", $get)) -ne 0) { Say "(model download failed; SmartSearch will retry when it starts)" }
+if ((Native $py @("-c", $get)) -ne 0) { Say "(model download failed; Glimpse will retry when it starts)" }
 
 # ---- shortcut, autostart, launch ----------------------------------------------------------------
 $pyw = Join-Path $Dir ".venv\Scripts\pythonw.exe"
-if ($env:SMARTSEARCH_NO_SHORTCUT -ne "1") {
+if ($env:GLIMPSE_NO_SHORTCUT -ne "1") {
     Step "Shortcuts"
     $programs = [Environment]::GetFolderPath("Programs")
-    $lnk = Join-Path $programs "SmartSearch.lnk"
+    $lnk = Join-Path $programs "Glimpse.lnk"
     $shell = New-Object -ComObject WScript.Shell
     $s = $shell.CreateShortcut($lnk)
     $s.TargetPath = $pyw
-    $s.Arguments = "-m smartsearch.app"
+    $s.Arguments = "-m glimpse.app"
     $s.WorkingDirectory = $Dir
-    $s.IconLocation = (Join-Path $Dir "smartsearch\assets\icon.ico")
+    $s.IconLocation = (Join-Path $Dir "glimpse\assets\icon.ico")
     $s.Description = "Search your PC by meaning (Alt+Space)"
     $s.Save()
-    Say "Start Menu: SmartSearch"
+    Say "Start Menu: Glimpse"
 }
 
-if ($env:SMARTSEARCH_NO_AUTOSTART -ne "1") {
-    if ((Native $py @("-c", "from smartsearch import autostart; autostart.set_enabled(True)")) -eq 0) {
+if ($env:GLIMPSE_NO_AUTOSTART -ne "1") {
+    if ((Native $py @("-c", "from glimpse import autostart; autostart.set_enabled(True)")) -eq 0) {
         Say "Starts with Windows (turn off from the tray icon menu)"
     }
 }
 
-if ($env:SMARTSEARCH_NO_LAUNCH -ne "1") {
-    Step "Starting SmartSearch"
-    Start-Process -FilePath $pyw -ArgumentList "-m", "smartsearch.app" -WorkingDirectory $Dir
+if ($env:GLIMPSE_NO_LAUNCH -ne "1") {
+    Step "Starting Glimpse"
+    Start-Process -FilePath $pyw -ArgumentList "-m", "glimpse.app" -WorkingDirectory $Dir
 }
 
 Write-Host ""

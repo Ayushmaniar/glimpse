@@ -10,13 +10,13 @@ import sys
 import tempfile
 
 TMP = tempfile.mkdtemp(prefix="ss_rank_")
-os.environ["SMARTSEARCH_DATA"] = os.path.join(TMP, "data")
+os.environ["GLIMPSE_DATA"] = os.path.join(TMP, "data")
 
 import numpy as np  # noqa: E402
 
-from smartsearch import core  # noqa: E402
-from smartsearch.sources.base import Result  # noqa: E402
-from smartsearch.store import Store  # noqa: E402
+from glimpse import core  # noqa: E402
+from glimpse.sources.base import Result  # noqa: E402
+from glimpse.store import Store  # noqa: E402
 
 DOCS = {
     r"C:\docs\Offer letter.docx": "Congratulations! You are the recipient of the Contoso Global Innovation Award for 2024.",

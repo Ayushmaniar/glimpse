@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def _icon_image(px: int = 64) -> Image.Image:
-    """The app icon (smartsearch/assets/icon.png, drawn by tools/make_icon.py); a plain magnifier if it is missing."""
+    """The app icon (glimpse/assets/icon.png, drawn by tools/make_icon.py); a plain magnifier if it is missing."""
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icon.png")
     try:
         return Image.open(path).convert("RGBA").resize((px, px), Image.LANCZOS)
@@ -59,30 +59,30 @@ def start(engine, show, quit_app, hotkey: dict) -> object | None:
         icon.update_menu()
 
     def open_log(_icon, _item) -> None:
-        os.startfile(os.path.join(config.DATA_DIR, "smartsearch.log"))  # noqa: S606 — user clicked it
+        os.startfile(os.path.join(config.DATA_DIR, "glimpse.log"))  # noqa: S606 — user clicked it
 
     def do_quit(icon, _item) -> None:
         icon.stop()
         quit_app()
 
     menu = pystray.Menu(
-        pystray.MenuItem(lambda _i: f"Open SmartSearch ({hotkey.get('spec', 'Alt+Space').title()})",
+        pystray.MenuItem(lambda _i: f"Open Glimpse ({hotkey.get('spec', 'Alt+Space').title()})",
                          lambda _icon, _item: show(), default=True),
         pystray.MenuItem(status_text, None, enabled=False),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Pause indexing", toggle_pause, checked=lambda _i: walk._paused.is_set()),
         pystray.MenuItem("Start with Windows", toggle_autostart, checked=lambda _i: autostart.enabled()),
         pystray.MenuItem("Open log", open_log),
-        pystray.MenuItem("Quit SmartSearch", do_quit),
+        pystray.MenuItem("Quit Glimpse", do_quit),
     )
-    icon = pystray.Icon("SmartSearch", _icon_image(), "SmartSearch", menu)
+    icon = pystray.Icon("Glimpse", _icon_image(), "Glimpse", menu)
     icon.run_detached()
 
     def refresh() -> None:  # keep the status line and tooltip current
         while True:
             time.sleep(5)
             try:
-                icon.title = f"SmartSearch: {status_text()}"
+                icon.title = f"Glimpse: {status_text()}"
                 icon.update_menu()
             except Exception:
                 return

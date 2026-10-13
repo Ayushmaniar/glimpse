@@ -13,6 +13,7 @@ API (all JSON unless noted):
                                 scope: only files inside that folder ("search this folder" from File Explorer)
   POST /api/similar             {id}                                  -> SearchResponse
   POST /api/run                 {id, op?: "open"|"reveal"|"copy"|...} -> {ok, toast?, error?, copy?}
+  POST /api/control             {id: "volume"|"mute"|"brightness"|"dark", value} -> the control's new state
   POST /api/transcribe          raw audio bytes (webm/ogg/wav)        -> {text, ms}
   GET  /api/thumb/<name>?t=     JPEG thumbnail from .data/thumbs
   GET  /api/preview/<item id>?t= PDF page or audio waveform, drawn on demand and cached
@@ -26,8 +27,9 @@ API (all JSON unless noted):
                                 {moved: true} remember the dragged position · {recenter: true} forget it
 
 SearchResponse = {query, ms, sections: [{source, label, panel, rank, intent, relevance,
-                  widget: null | {title, tone, rows: [[label, value, tone?]]},
+                  widget: null | {title, tone, rows: [[label, value, tone?]], controls?: [Control]},
                   results: [Result]}]}
+Control = {id, kind: "slider"|"toggle", label, icon, value, min?, max?, unit?}   (live volume, brightness, ...)
 Result = {id, source, title, subtitle, snippet, score, thumb, icon, badge, actions: [{label, op}]}
 """
 from __future__ import annotations
@@ -68,7 +70,7 @@ class App:
 
 def _handler(app: App):
     class H(BaseHTTPRequestHandler):
-        server_version = "SmartSearch"
+        server_version = "Glimpse"
 
         def log_message(self, fmt, *args):  # quiet
             log.debug(fmt, *args)
@@ -190,6 +192,12 @@ def _handler(app: App):
                     return self._json(app.engine.similar(data["id"]))
                 if path == "/api/run":
                     return self._json(app.engine.run(data["id"], data.get("op", "open")))
+                if path == "/api/control":
+                    from . import controls
+                    try:
+                        return self._json(controls.set_control(str(data.get("id")), data.get("value")))
+                    except KeyError:
+                        return self._json({"error": "unknown control"}, 404)
                 if path == "/api/settings":
                     config.update(data)
                     app.engine.request_reindex()

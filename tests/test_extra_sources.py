@@ -13,13 +13,13 @@ import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 
-from smartsearch.embedder import Embedder
-from smartsearch.sources.browser_history import EPOCH, BrowserHistorySource
-from smartsearch.sources.emoji import SYNONYMS, EmojiSource, _characters
-from smartsearch.sources.shell_history import ShellHistorySource
-from smartsearch.sources.windows import WindowsSource, _windows
-from smartsearch.store import Store
-from smartsearch.sources import walk as _walk  # noqa: E402
+from glimpse.embedder import Embedder
+from glimpse.sources.browser_history import EPOCH, BrowserHistorySource
+from glimpse.sources.emoji import SYNONYMS, EmojiSource, _characters
+from glimpse.sources.shell_history import ShellHistorySource
+from glimpse.sources.windows import WindowsSource, _windows
+from glimpse.store import Store
+from glimpse.sources import walk as _walk  # noqa: E402
 _walk.on_battery = lambda: False  # index even when the laptop runs on battery
 
 FAILS = []
@@ -104,7 +104,7 @@ def show(source, emb: Embedder, q: str, k: int = 3) -> None:
 
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
-    tmp = tempfile.mkdtemp(prefix="smartsearch-test-")
+    tmp = tempfile.mkdtemp(prefix="glimpse-test-")
     store = Store(os.path.join(tmp, "test.sqlite"))
     t0 = time.perf_counter()
     emb = Embedder(backend="cpu")

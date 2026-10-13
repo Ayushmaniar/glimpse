@@ -1,0 +1,58 @@
+{
+  "queries": [
+    {
+      "q": "paneer"
+    },
+    {
+      "q": "birthday",
+      "video": 3,
+      "video_secs": 4.5
+    },
+    {
+      "q": "glowing blue waves at night"
+    },
+    {
+      "q": "mountains and a lake"
+    },
+    {
+      "q": "what is a bayesian network",
+      "kind": "text",
+      "show": {
+        "files": 2
+      },
+      "preview": "files"
+    },
+    {
+      "q": "code that finds duplicate photos",
+      "kind": "text",
+      "show": {
+        "files": 1
+      },
+      "preview": "files"
+    },
+    {
+      "q": "my screen is too dim",
+      "kind": "text",
+      "show": {
+        "actions": 3
+      }
+    },
+    {
+      "q": "make text bigger",
+      "kind": "rapid",
+      "show": {
+        "actions": 3
+      },
+      "subs": [
+        "make text bigger",
+        "eyes hurt at night",
+        "no sound from speakers",
+        "uninstall an app"
+      ]
+    },
+    {
+      "q": "sunset at the beach",
+      "voice": true
+    }
+  ]
+}

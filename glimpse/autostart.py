@@ -12,7 +12,8 @@ import winreg
 from . import config
 
 KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
-NAME = "SmartSearch"
+NAME = "Glimpse"
+OLD_NAME = "SmartSearch"  # the app's name before the rename; its Run entry would start a copy that no longer exists
 
 
 def command() -> str:
@@ -21,7 +22,7 @@ def command() -> str:
         exe = sys.executable
     # A Run entry has no working directory, so start the module from the project folder explicitly.
     code = (f"import os,sys,runpy;os.chdir(r'{config.ROOT}');sys.path.insert(0,r'{config.ROOT}');"
-            "runpy.run_module('smartsearch.app',run_name='__main__')")
+            "runpy.run_module('glimpse.app',run_name='__main__')")
     return f'"{exe}" -c "{code}"'
 
 
@@ -43,3 +44,18 @@ def set_enabled(on: bool) -> None:
                 winreg.DeleteValue(k, NAME)
             except FileNotFoundError:
                 pass
+
+
+def migrate() -> None:
+    """Replace a stale "SmartSearch" Run entry with this app's own: on if the user had it on."""
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, KEY, 0, winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE) as k:
+            try:
+                winreg.QueryValueEx(k, OLD_NAME)
+            except OSError:
+                return
+            winreg.DeleteValue(k, OLD_NAME)
+        if not enabled():
+            set_enabled(True)
+    except OSError:
+        pass

@@ -11,10 +11,10 @@ import time
 from datetime import datetime, timedelta
 
 TMP = tempfile.mkdtemp(prefix="ss_time_")
-os.environ["SMARTSEARCH_DATA"] = os.path.join(TMP, "data")
+os.environ["GLIMPSE_DATA"] = os.path.join(TMP, "data")
 
-from smartsearch import config, timeq  # noqa: E402
-from smartsearch.sources import walk as _walk  # noqa: E402
+from glimpse import config, timeq  # noqa: E402
+from glimpse.sources import walk as _walk  # noqa: E402
 _walk.on_battery = lambda: False  # index even when the laptop runs on battery
 
 DOCS = os.path.join(TMP, "docs")
@@ -61,7 +61,7 @@ def main() -> None:
         os.utime(p, (ts, ts))
     config.update({"folders": [DOCS], "sources": {k: k == "files" or k == "actions" for k in config.get("sources")}})
 
-    from smartsearch import core, embedder
+    from glimpse import core, embedder
     eng = core.Engine()
     eng.emb = embedder.get()
     eng._intent_vecs = {n: eng.emb.text(embedder.doc(s.intent, s.label)) for n, s in eng.sources.items() if s.intent}
