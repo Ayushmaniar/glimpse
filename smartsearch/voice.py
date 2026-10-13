@@ -34,9 +34,9 @@ def _add_cuda_dlls() -> None:
                 pass
 
 
-# "auto": the large turbo model on an NVIDIA GPU (~0.3 s per query), a small one on CPU, where the large one
-# would take several seconds per query and a 1.6 GB download.
-AUTO_MODEL = {"cuda": "large-v3-turbo", "cpu": "small"}
+# "auto": the large turbo model on an NVIDIA GPU (~0.3 s per query); "base" on CPU (~1.7 s for a short query on a
+# 16-thread laptop CPU, vs ~5 s for "small" and far more for the large one, which is also a 1.6 GB download).
+AUTO_MODEL = {"cuda": "large-v3-turbo", "cpu": "base"}
 
 
 def load(download: bool = True):
@@ -84,8 +84,9 @@ def _decode(audio: bytes):
 def transcribe(audio: bytes) -> dict:
     t = time.perf_counter()
     m = load()
-    segs, info = m.transcribe(_decode(audio), beam_size=1, vad_filter=True,
-                              condition_on_previous_text=False)
+    # Language detection is a second pass (it doubles CPU time); "voice_language" (e.g. "en") skips it.
+    segs, info = m.transcribe(_decode(audio), beam_size=1, vad_filter=True, condition_on_previous_text=False,
+                              language=config.get("voice_language") or None)
     text = " ".join(s.text.strip() for s in segs).strip()
     return {"text": text, "language": info.language, "device": _device,
             "ms": round((time.perf_counter() - t) * 1000)}

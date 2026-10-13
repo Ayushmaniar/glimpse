@@ -104,6 +104,7 @@ def main() -> None:
     ap.add_argument("--no-index", action="store_true", help="search the existing index without re-scanning")
     args = ap.parse_args()
 
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")  # model downloads on Windows without symlinks
     os.makedirs(config.DATA_DIR, exist_ok=True)
     handlers: list[logging.Handler] = [
         logging.FileHandler(os.path.join(config.DATA_DIR, "smartsearch.log"), encoding="utf-8")]

@@ -1,0 +1,33 @@
+{
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "bpm": 120,
+  "duration": 56,
+  "typing_cps": 22,
+  "scenes": {
+    "hook": [0, 6],
+    "logo": [6, 10],
+    "demo": [10, 35],
+    "privacy": [35, 42],
+    "montage": [42, 48],
+    "cta": [48, 56]
+  },
+  "keys": [10.35, 10.55],
+  "queries": [
+    {"start": 11.0, "text": "receipt from the sushi dinner", "page": "photos",
+     "caption": "Photos, by what's in them", "sub": "Even the text inside a picture. No tags, no folders."},
+    {"start": 15.0, "text": "wifi keeps disconnecting", "page": "wifi",
+     "caption": "Describe a problem, get the fix", "sub": "The right Windows setting, plus a live check of your network."},
+    {"start": 19.0, "text": "voice note about the electricity bill", "page": "voice",
+     "caption": "Recordings, by what was said", "sub": "Jumps straight to the moment. No transcripts needed."},
+    {"start": 23.0, "text": "how much notice before I move out", "page": "lease",
+     "caption": "Documents, by meaning", "sub": "PDFs, Word, slides, even scanned pages."},
+    {"start": 27.0, "text": "mountains and a lake", "page": "video",
+     "caption": "Videos, to the exact moment", "sub": "Opens the clip at 2:41, where the lake appears."},
+    {"start": 31.0, "voice": true, "text": "photos from last weekend", "page": "weekend",
+     "caption": "Or just say it", "sub": "Voice search runs on your PC too."}
+  ],
+  "whoosh": [5.75, 9.75, 34.75, 41.75, 47.75],
+  "impact": [6.0, 48.0]
+}

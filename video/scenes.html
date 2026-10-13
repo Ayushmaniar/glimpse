@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SmartSearch launch video</title>
+<!-- Every frame is a pure function of time: render.js calls frame(t) and takes a screenshot.
+     Open this file in a browser to scrub it: ?t=12.5, or press Space to play. -->
+<style>
+  :root {
+    --bg0: #07080c; --bg1: #0d1020;
+    --blue: #3466f6; --violet: #8b5cf6; --sky: #84a9ff;
+    --text: #eef0f6; --muted: #9aa3b5; --line: rgba(255,255,255,.09);
+    --surface: #171a22; --surface2: #222632; --ok: #5fd09a; --warn: #f0b35c;
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --mono: "Cascadia Code", Consolas, monospace;
+  }
+  html, body { margin: 0; background: #000; overflow: hidden; }
+  #stage {
+    position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    background: radial-gradient(1400px 900px at 50% 40%, var(--bg1), var(--bg0));
+    color: var(--text); font-family: var(--font);
+  }
+  .layer { position: absolute; inset: 0; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .55; will-change: transform; }
+  #b1 { width: 900px; height: 900px; background: #2a4fd6; }
+  #b2 { width: 800px; height: 800px; background: #6d3fd8; }
+  #b3 { width: 600px; height: 600px; background: #0f8aa8; opacity: .25; }
+  #grain { position: absolute; inset: 0; opacity: .07; mix-blend-mode: overlay; pointer-events: none; }
+  #vignette { position: absolute; inset: 0; background: radial-gradient(1200px 800px at 50% 50%, transparent 55%, rgba(0,0,0,.55)); }
+
+  .center { position: absolute; left: 0; right: 0; text-align: center; }
+  .h1 { font-family: var(--display); font-weight: 700; font-size: 96px; letter-spacing: -.035em; line-height: 1.05; }
+  .h2 { font-family: var(--display); font-weight: 600; font-size: 64px; letter-spacing: -.03em; line-height: 1.1; }
+  .sub { font-size: 32px; color: var(--muted); letter-spacing: -.005em; }
+  .grad { background: linear-gradient(90deg, #8fb2ff, #b79bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* hook */
+  .fname {
+    position: absolute; padding: 14px 22px; border-radius: 14px; font: 500 26px var(--mono);
+    background: rgba(255,255,255,.05); border: 1px solid var(--line); color: #c9cfdb; white-space: nowrap;
+    box-shadow: 0 10px 40px rgba(0,0,0,.35);
+  }
+  .fname .ico { margin-right: 12px; font-family: "Segoe UI Emoji"; }
+
+  /* logo */
+  #logoIcon { position: absolute; left: 50%; top: 300px; width: 240px; height: 240px; margin-left: -120px;
+    border-radius: 54px; box-shadow: 0 30px 90px rgba(80,90,255,.45); }
+  #wordmark { top: 580px; }
+  #tagline { top: 700px; }
+
+  /* keycaps */
+  .keys { position: absolute; left: 0; right: 0; top: 440px; display: flex; justify-content: center; gap: 28px; align-items: center; }
+  .cap {
+    min-width: 150px; height: 150px; padding: 0 44px; box-sizing: border-box; border-radius: 30px;
+    display: grid; place-items: center; font: 600 48px var(--display); color: #e8ebf3;
+    background: linear-gradient(#2a2f3c, #1b1f29); border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 10px 0 #0c0e14, 0 20px 50px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .cap.wide { min-width: 360px; }
+  .plus { font: 300 60px var(--display); color: var(--muted); }
+
+  /* launcher */
+  #launcher {
+    position: absolute; left: 50%; top: 150px; width: 1240px; margin-left: -620px;
+    border-radius: 26px; background: rgba(19,22,30,.86); border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 40px 120px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.4); overflow: hidden;
+    backdrop-filter: blur(20px);
+  }
+  #launcher::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(900px 220px at 50% -120px, rgba(132,169,255,.12), transparent 70%); }
+  .bar { position: relative; margin: 22px; height: 92px; border-radius: 18px; display: flex; align-items: center; gap: 18px;
+    padding: 0 24px; background: #1d2129; border: 1.5px solid rgba(132,169,255,.55); box-shadow: 0 0 0 5px rgba(132,169,255,.12); }
+  .bar svg.mag { width: 34px; height: 34px; color: var(--muted); flex: none; }
+  #q { flex: 1; font: 400 38px var(--font); color: var(--text); white-space: nowrap; overflow: hidden; }
+  #q .ph { color: #6c7488; }
+  #caret { display: inline-block; width: 3px; height: 42px; background: var(--sky); vertical-align: -8px; margin-left: 2px; border-radius: 2px; }
+  #mic { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; color: var(--muted); flex: none; position: relative; }
+  #mic svg { width: 30px; height: 30px; }
+  #mic.on { background: #e5484d; color: #fff; }
+  .ring { position: absolute; inset: 0; border-radius: 16px; border: 3px solid #e5484d; }
+  #wave { display: flex; gap: 6px; align-items: center; height: 50px; }
+  #wave i { display: block; width: 7px; border-radius: 4px; background: var(--sky); }
+  #chip { position: relative; margin: -6px 22px 4px; display: inline-flex; gap: 10px; align-items: center; height: 46px; padding: 0 18px;
+    border-radius: 999px; background: rgba(132,169,255,.15); color: var(--sky); font-size: 24px; }
+  #results { position: relative; height: 0; }
+  .page { position: absolute; inset: 0 22px 22px; }
+  .sec { font: 600 22px var(--font); color: var(--muted); margin: 8px 6px 14px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .tile { border-radius: 18px; overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); position: relative; }
+  .tile .img { height: 240px; position: relative; overflow: hidden; }
+  .tile .img svg { width: 100%; height: 100%; display: block; }
+  .tile .t { padding: 14px 16px 2px; font: 600 23px var(--font); }
+  .tile .d { padding: 0 16px 16px; font-size: 20px; color: var(--muted); }
+  .tile.hit { box-shadow: 0 0 0 4px var(--sky), 0 20px 60px rgba(80,120,255,.35); }
+  .badge { position: absolute; right: 12px; bottom: 12px; padding: 6px 12px; border-radius: 10px; background: rgba(0,0,0,.65);
+    color: #fff; font: 600 22px var(--mono); }
+  .play { position: absolute; left: 50%; top: 50%; width: 76px; height: 76px; margin: -38px; border-radius: 50%;
+    background: rgba(0,0,0,.45); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); }
+  .play::after { content: ""; position: absolute; left: 31px; top: 22px; border-left: 26px solid #fff; border-top: 16px solid transparent; border-bottom: 16px solid transparent; }
+  .vprog { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: rgba(255,255,255,.25); }
+  .vprog i { display: block; height: 100%; width: 0; background: #fff; }
+  .hl { color: var(--sky); }
+  .snip b { color: var(--text); }
+
+  .row { display: flex; gap: 22px; align-items: center; padding: 16px; border-radius: 18px; }
+  .row.hit { background: rgba(132,169,255,.10); box-shadow: inset 0 0 0 2px rgba(132,169,255,.55); }
+  .row .rt { font: 600 28px var(--font); }
+  .row .rs { font-size: 21px; color: var(--muted); margin-top: 4px; }
+  .row .snip { font-size: 22px; color: var(--muted); margin-top: 8px; }
+  .row .end { margin-left: auto; display: flex; gap: 14px; align-items: center; color: var(--muted); font-size: 21px; white-space: nowrap; }
+  .pill { padding: 6px 12px; border-radius: 10px; background: var(--surface2); color: #c8cede; font: 600 20px var(--mono); }
+
+  .widget { border-radius: 18px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); border-left: 6px solid var(--warn);
+    padding: 20px 26px; margin-bottom: 18px; }
+  .widget .wh { font: 600 26px var(--font); display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .widget .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--warn); }
+  .wrows { display: grid; grid-template-columns: 170px 1fr; gap: 8px 20px; font-size: 23px; }
+  .wrows .l { color: var(--muted); }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .card { display: flex; gap: 18px; align-items: flex-start; padding: 20px; border-radius: 18px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+  .card.hit { box-shadow: inset 0 0 0 2px rgba(132,169,255,.6); background: rgba(132,169,255,.08); }
+  .card .ci { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; font-size: 34px; background: rgba(132,169,255,.14); flex: none; font-family: "Segoe UI Emoji"; }
+  .card .ct { font: 600 26px var(--font); }
+  .card .cs { font-size: 21px; color: var(--muted); margin-top: 4px; }
+
+  .wavebox { width: 300px; height: 96px; border-radius: 14px; background: var(--surface2); position: relative; overflow: hidden; flex: none; }
+  .wavebox svg { position: absolute; inset: 0; }
+  .wwin { position: absolute; top: 0; bottom: 0; background: rgba(132,169,255,.22); }
+  .wmark { position: absolute; top: 0; bottom: 0; width: 4px; background: var(--sky); }
+  .pdf { width: 120px; height: 156px; border-radius: 8px; background: #fff; position: relative; flex: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); overflow: hidden; }
+  .pdf .tag { position: absolute; right: 0; top: 0; background: #e5484d; color: #fff; font: 800 15px var(--font); padding: 4px 8px; border-bottom-left-radius: 8px; }
+  .pdf i { position: absolute; left: 14px; height: 6px; border-radius: 3px; background: #c9ced8; }
+  .pdf i.m { background: #84a9ff; }
+
+  /* captions */
+  #caption { position: absolute; left: 340px; top: 870px; }
+  #caption .c1 { font: 700 54px var(--display); letter-spacing: -.025em; }
+  #caption .c2 { font-size: 30px; color: var(--muted); margin-top: 8px; }
+  #steps { position: absolute; right: 340px; top: 892px; display: flex; gap: 12px; }
+  #steps i { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.18); }
+  #steps i.on { background: var(--sky); }
+
+  /* privacy */
+  #pc { position: absolute; left: 50%; top: 210px; width: 560px; height: 380px; margin-left: -280px; }
+  .laptop { position: absolute; left: 40px; top: 0; width: 480px; height: 300px; border-radius: 22px; background: linear-gradient(#1f2430,#151922);
+    box-shadow: inset 0 0 0 3px #343b4c, 0 30px 80px rgba(0,0,0,.5); }
+  .laptop::after { content: ""; position: absolute; left: -40px; right: -40px; bottom: -34px; height: 34px; border-radius: 0 0 26px 26px; background: linear-gradient(#2b3140,#1a1e28); }
+  .shield { position: absolute; left: 50%; top: 50px; width: 160px; height: 190px; margin-left: -80px; }
+  .orb { position: absolute; width: 74px; height: 74px; border-radius: 20px; display: grid; place-items: center; font-size: 38px; font-family: "Segoe UI Emoji";
+    background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px var(--line); }
+  #cloud { position: absolute; left: 1330px; top: 190px; width: 220px; height: 150px; }
+  #cutline { position: absolute; left: 1120px; top: 300px; width: 260px; height: 4px; }
+
+  /* montage */
+  #mgrid { position: absolute; left: 50%; top: 380px; width: 1500px; margin-left: -750px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; }
+  .mt { height: 200px; border-radius: 26px; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px var(--line), 0 20px 50px rgba(0,0,0,.3);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .mt .e { font-size: 70px; font-family: "Segoe UI Emoji"; line-height: 1; }
+  .mt .l { font: 600 28px var(--font); color: #dfe3ee; }
+
+  /* cta */
+  #ctaIcon { position: absolute; left: 50%; top: 190px; width: 180px; height: 180px; margin-left: -90px; border-radius: 42px; box-shadow: 0 30px 90px rgba(80,90,255,.45); }
+  #cmd { position: absolute; left: 50%; top: 730px; transform: translateX(-50%); padding: 22px 34px; border-radius: 18px; background: rgba(0,0,0,.45);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); font: 500 30px var(--mono); color: #d9def0; white-space: nowrap; }
+  #cmd .p { color: var(--sky); margin-right: 16px; }
+  .kbd { display: inline-block; padding: 4px 18px; margin: 0 6px; border-radius: 12px; background: linear-gradient(#2a2f3c,#1b1f29);
+    box-shadow: 0 4px 0 #0c0e14, inset 0 1px 0 rgba(255,255,255,.12); font: 600 34px var(--display); color: #fff; }
+  #fade { position: absolute; inset: 0; background: #000; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer" id="bg">
+    <div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div>
+  </div>
+  <svg id="grain" width="1920" height="1080"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+  <div id="vignette"></div>
+
+  <!-- hook -->
+  <div class="layer" id="hook">
+    <div id="files"></div>
+    <div class="center h1" id="hook1" style="top:390px">You remember <span class="grad">what's in it</span>.</div>
+    <div class="center h1" id="hook2" style="top:520px">Not what you named it.</div>
+  </div>
+
+  <!-- logo -->
+  <div class="layer" id="logo">
+    <img id="logoIcon" src="../smartsearch/assets/icon-1024.png" alt="">
+    <div class="center h1" id="wordmark">SmartSearch</div>
+    <div class="center sub" id="tagline" style="font-size:40px">Search your PC <span class="grad" style="font-weight:600">by meaning</span>.</div>
+  </div>
+
+  <!-- demo -->
+  <div class="layer" id="demo">
+    <div class="keys" id="keys"><div class="cap wide" id="k1">Alt</div><div class="plus">+</div><div class="cap wide" id="k2">Space</div></div>
+    <div id="launcher">
+      <div class="bar">
+        <svg class="mag" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <div id="q"></div>
+        <div id="wave"></div>
+        <div id="mic"><div class="ring" id="ring1"></div><div class="ring" id="ring2"></div>
+          <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+      </div>
+      <div id="chip">📅 last weekend <span style="color:var(--muted)">· Sat 10 – Sun 11 Oct</span></div>
+      <div id="results"></div>
+    </div>
+    <div id="caption"><div class="c1" id="c1"></div><div class="c2" id="c2"></div></div>
+    <div id="steps"></div>
+  </div>
+
+  <!-- privacy -->
+  <div class="layer" id="privacy">
+    <div id="pc">
+      <div class="laptop"></div>
+      <svg class="shield" viewBox="0 0 160 190"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3466f6"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+        <path d="M80 6 L148 32 V92 C148 140 116 172 80 184 C44 172 12 140 12 92 V32 Z" fill="url(#sg)"/>
+        <rect x="52" y="86" width="56" height="44" rx="8" fill="#fff"/><path d="M62 86 V72 a18 18 0 0 1 36 0 V86" fill="none" stroke="#fff" stroke-width="9"/>
+        <circle cx="80" cy="106" r="6" fill="#3466f6"/></svg>
+    </div>
+    <div id="orbs"></div>
+    <svg id="cloud" viewBox="0 0 220 150"><path d="M60 120 H170 a40 40 0 0 0 0-80 a55 55 0 0 0-104-8 A44 44 0 0 0 60 120Z" fill="none" stroke="#6c7488" stroke-width="6" stroke-dasharray="14 10"/>
+      <path id="x1" d="M80 50 L150 110 M150 50 L80 110" stroke="#e5484d" stroke-width="10" stroke-linecap="round"/></svg>
+    <div class="center h2" id="pv1" style="top:700px">Everything stays on your PC.</div>
+    <div class="center sub" id="pv2" style="top:800px">The AI runs on your own hardware. No cloud. No account. No uploads.</div>
+  </div>
+
+  <!-- montage -->
+  <div class="layer" id="montage">
+    <div class="center h2" id="mh" style="top:200px">One search box for <span class="grad">everything</span>.</div>
+    <div id="mgrid"></div>
+  </div>
+
+  <!-- cta -->
+  <div class="layer" id="cta">
+    <img id="ctaIcon" src="../smartsearch/assets/icon-1024.png" alt="">
+    <div class="center h1" id="ct1" style="top:410px">SmartSearch</div>
+    <div class="center sub" id="ct2" style="top:530px;font-size:36px">Free &amp; open source · Windows 10 &amp; 11 · Private by design</div>
+    <div class="center" id="ct3" style="top:615px;font:600 40px var(--font)">github.com/<span class="grad">Ayushmaniar/smartsearch</span></div>
+    <div id="cmd"><span class="p">PS&gt;</span>irm https://raw.githubusercontent.com/Ayushmaniar/smartsearch/main/install.ps1 | iex</div>
+    <div class="center" id="ct4" style="top:880px;font-size:34px;color:var(--muted)">Then press <span class="kbd">Alt</span>+<span class="kbd">Space</span></div>
+  </div>
+  <div id="fade"></div>
+</div>
+
+<script>
+const TL = /*TIMELINE*/null;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const easeOut = (k) => 1 - Math.pow(1 - clamp(k), 3);
+const easeInOut = (k) => { k = clamp(k); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+const easeBack = (k) => { k = clamp(k); const c = 1.70158; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const prog = (t, a, d) => clamp((t - a) / d);
+// visible from a to b with fades
+const win = (t, a, b, fi = .45, fo = .45) => Math.min(easeOut(prog(t, a, fi)), 1 - easeInOut(prog(t, b - fo, fo)));
+function style(el, o) { for (const k in o) el.style[k] = o[k]; }
+function show(el, op, dy = 0, sc = 1, blur = 0) {
+  el.style.opacity = op;
+  el.style.transform = `translateY(${dy}px) scale(${sc})`;
+  el.style.filter = blur > .05 ? `blur(${blur}px)` : "none";
+  el.style.visibility = op <= 0.001 ? "hidden" : "visible";
+}
+
+/* ---------- illustrations (inline SVG) ---------- */
+const svg = (body, w = 300, h = 240) => `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid slice">${body}</svg>`;
+let gid = 0;
+function grad(c1, c2, vert = true) { const id = "g" + (gid++); return [id, `<defs><linearGradient id="${id}" x1="0" y1="0" x2="${vert ? 0 : 1}" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>`]; }
+const ART = {
+  receipt() {
+    const [g, d] = grad("#6b4a2f", "#3e2a1b");
+    let lines = ""; for (let i = 0; i < 9; i++) lines += `<rect x="${108}" y="${62 + i * 15}" width="${i % 3 === 2 ? 50 : 84}" height="5" rx="2" fill="#555"/><rect x="${200}" y="${62 + i * 15}" width="22" height="5" rx="2" fill="#555"/>`;
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><g transform="rotate(-6 150 120)"><rect x="92" y="18" width="146" height="214" fill="#f6f3ea"/>
+      <rect x="128" y="30" width="74" height="10" rx="3" fill="#222"/><rect x="138" y="45" width="54" height="5" rx="2" fill="#888"/>${lines}
+      <rect x="108" y="206" width="60" height="9" rx="3" fill="#222"/><rect x="190" y="206" width="34" height="9" rx="3" fill="#222"/></g>
+      <circle cx="50" cy="190" r="34" fill="#ddd" opacity=".9"/><circle cx="50" cy="190" r="22" fill="#c94f3a"/>`);
+  },
+  sushi() {
+    const [g, d] = grad("#1d1d22", "#0e0e12");
+    let s = ""; [[70, 120], [130, 110], [190, 125], [240, 112]].forEach(([x, y]) => { s += `<ellipse cx="${x}" cy="${y + 8}" rx="26" ry="12" fill="#f4f1ea"/><rect x="${x - 26}" y="${y - 8}" width="52" height="16" rx="8" fill="#ff7a59"/><rect x="${x - 26}" y="${y - 2}" width="52" height="4" fill="#ffb199" opacity=".7"/>`; });
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><rect x="30" y="80" width="250" height="90" rx="14" fill="#3b2b22"/>${s}<rect x="40" y="190" width="200" height="8" rx="4" fill="#8a6a45"/>`);
+  },
+  dining() {
+    const [g, d] = grad("#3a2a4a", "#1a1424");
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><circle cx="70" cy="50" r="18" fill="#ffd27a" opacity=".9"/><circle cx="170" cy="40" r="14" fill="#ffd27a" opacity=".8"/><circle cx="250" cy="55" r="16" fill="#ffd27a" opacity=".85"/>
+      <rect x="0" y="150" width="300" height="90" fill="#24182c"/><rect x="40" y="120" width="220" height="16" rx="6" fill="#6b4a33"/><rect x="60" y="136" width="10" height="70" fill="#4a3324"/><rect x="230" y="136" width="10" height="70" fill="#4a3324"/>
+      <circle cx="110" cy="112" r="10" fill="#cfd8e3"/><circle cx="190" cy="112" r="10" fill="#cfd8e3"/>`);
+  },
+  city() {
+    const [g, d] = grad("#14183a", "#3a2050");
+    let b = ""; [[10, 120, 40], [55, 90, 35], [95, 140, 50], [150, 70, 40], [195, 110, 45], [245, 85, 50]].forEach(([x, h, w]) => { b += `<rect x="${x}" y="${240 - h}" width="${w}" height="${h}" fill="#0b0d1c"/>`; for (let i = 0; i < 6; i++) b += `<rect x="${x + 6 + (i % 3) * 11}" y="${250 - h + Math.floor(i / 3) * 18}" width="6" height="8" fill="#ffd27a" opacity=".7"/>`; });
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><circle cx="230" cy="50" r="22" fill="#f2f0ff" opacity=".85"/>${b}`);
+  },
+  lake(h = 0) {
+    const [g, d] = grad(`hsl(${205 + h},70%,62%)`, `hsl(${220 + h},55%,30%)`);
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><circle cx="225" cy="62" r="24" fill="#fff" opacity=".35"/>
+      <path d="M0 150 L70 70 L120 120 L170 55 L240 130 L300 95 V170 H0Z" fill="#2c3e64"/><path d="M150 72 L170 55 L190 76 L178 70 L170 78Z" fill="#fff" opacity=".85"/>
+      <rect y="160" width="300" height="80" fill="#4e86c4"/><path d="M0 160 L70 205 L120 175 L170 215 L240 168 L300 190 V160Z" fill="#2c3e64" opacity=".35"/>
+      <rect x="40" y="200" width="60" height="3" rx="1" fill="#fff" opacity=".4"/><rect x="170" y="222" width="80" height="3" rx="1" fill="#fff" opacity=".35"/>`);
+  },
+  beach() {
+    const [g, d] = grad("#ffb36b", "#ff6f91");
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><circle cx="150" cy="130" r="40" fill="#fff4c2" opacity=".9"/><rect y="140" width="300" height="50" fill="#3a7bd5" opacity=".9"/><rect y="185" width="300" height="55" fill="#f3d7a6"/>
+      <path d="M40 185 q10-60 30-80 M70 105 q-30 0-46 14 M70 105 q22-8 40 6 M70 105 q-6-20-26-26" stroke="#2a3a2a" stroke-width="5" fill="none"/>`);
+  },
+  friends() {
+    const [g, d] = grad("#ffcf86", "#e0726a");
+    let p = ""; [70, 120, 175, 225].forEach((x, i) => { p += `<circle cx="${x}" cy="${120 + (i % 2) * 6}" r="18" fill="#3a2430"/><rect x="${x - 22}" y="${140 + (i % 2) * 6}" width="44" height="100" rx="18" fill="#3a2430"/>`; });
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><circle cx="150" cy="80" r="50" fill="#fff3d6" opacity=".7"/>${p}`);
+  },
+  food() {
+    const [g, d] = grad("#2b3b2b", "#1a241a");
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><circle cx="150" cy="125" r="85" fill="#f2efe8"/><circle cx="150" cy="125" r="62" fill="#e9b44c"/><circle cx="125" cy="110" r="10" fill="#c0392b"/><circle cx="170" cy="105" r="10" fill="#c0392b"/><circle cx="150" cy="145" r="10" fill="#c0392b"/><circle cx="178" cy="140" r="7" fill="#3c8d2f"/><circle cx="122" cy="140" r="7" fill="#3c8d2f"/>`);
+  },
+  sunset() {
+    const [g, d] = grad("#5b3b8c", "#ff8a5c");
+    return svg(`${d}<rect width="300" height="240" fill="url(#${g})"/><circle cx="150" cy="170" r="46" fill="#ffd27a"/><rect y="170" width="300" height="70" fill="#2b2050"/><rect x="40" y="190" width="70" height="3" fill="#ffd27a" opacity=".6"/><rect x="170" y="205" width="90" height="3" fill="#ffd27a" opacity=".5"/>`);
+  },
+};
+
+function waveSvg(seed, n = 60, w = 300, h = 96, color = "#7f8aa0") {
+  let s = "", x = seed;
+  for (let i = 0; i < n; i++) {
+    x = (x * 9301 + 49297) % 233280;
+    const a = .2 + .8 * Math.abs(Math.sin(i * .37 + seed)) * (.5 + .5 * x / 233280);
+    const bh = a * h * .8, bw = w / n * .6;
+    s += `<rect x="${(i + .2) * w / n}" y="${(h - bh) / 2}" width="${bw}" height="${bh}" rx="${bw / 2}" fill="${color}"/>`;
+  }
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${s}</svg>`;
+}
+
+/* ---------- result pages ---------- */
+const PAGES = {
+  photos: `<div class="sec">Photos &amp; video</div><div class="grid4">
+    <div class="tile it hit"><div class="img">${ART.receipt()}</div><div class="t">IMG_4021.jpg</div><div class="d">Sat 14 Mar · 21:42</div></div>
+    <div class="tile it"><div class="img">${ART.sushi()}</div><div class="t">IMG_4019.jpg</div><div class="d">Sat 14 Mar · 20:15</div></div>
+    <div class="tile it"><div class="img">${ART.dining()}</div><div class="t">IMG_4017.jpg</div><div class="d">Sat 14 Mar · 19:58</div></div>
+    <div class="tile it"><div class="img">${ART.city()}</div><div class="t">IMG_4024.jpg</div><div class="d">Sat 14 Mar · 22:30</div></div></div>`,
+  wifi: `<div class="sec">Settings &amp; fixes</div>
+    <div class="widget it"><div class="wh"><span class="dot"></span>Network</div><div class="wrows">
+      <div class="l">Wi-Fi</div><div style="color:var(--warn)">HomeNet-5G · 38% signal</div>
+      <div class="l">Internet</div><div style="color:var(--ok)">Reachable</div>
+      <div class="l">Latency</div><div style="color:var(--warn)">212 ms</div></div></div>
+    <div class="cards">
+      <div class="card it hit"><div class="ci">📶</div><div><div class="ct">Wi-Fi settings</div><div class="cs">Networks, saved profiles, airplane mode</div></div></div>
+      <div class="card it"><div class="ci">🛠️</div><div><div class="ct">Network troubleshooter</div><div class="cs">Find and fix connection problems</div></div></div>
+      <div class="card it"><div class="ci">🔄</div><div><div class="ct">Reset network adapter</div><div class="cs">Release and renew the IP address</div></div></div>
+      <div class="card it"><div class="ci">⚡</div><div><div class="ct">Power &amp; sleep</div><div class="cs">Stop Wi-Fi sleeping on battery</div></div></div></div>`,
+  voice: `<div class="sec">Voice notes</div>
+    <div class="row it hit"><div class="wavebox">${waveSvg(3)}<div class="wwin" style="left:96px;width:62px"></div><div class="wmark" style="left:124px"></div></div>
+      <div><div class="rt">Recording (12).m4a</div><div class="rs">Voice note · 3:34 · Sounds › Recordings</div><div class="snip">Matched what you <b>said</b> at 1:13. Click to play from there.</div></div>
+      <div class="end">Tue 19:20<span class="pill">1:13</span></div></div>
+    <div class="row it"><div class="wavebox">${waveSvg(11)}<div class="wmark" style="left:210px"></div></div>
+      <div><div class="rt">Recording (9).m4a</div><div class="rs">Voice note · 1:02</div></div><div class="end">2 Oct<span class="pill">0:41</span></div></div>`,
+  lease: `<div class="sec">Documents</div>
+    <div class="row it hit"><div class="pdf"><span class="tag">PDF</span><i style="top:22px;width:60px;background:#2a2f3a"></i>${[40, 54, 68, 82].map((y, i) => `<i style="top:${y}px;width:${i % 2 ? 80 : 92}px"></i>`).join("")}<i class="m" style="top:98px;width:92px"></i><i class="m" style="top:110px;width:70px"></i><i style="top:126px;width:84px"></i></div>
+      <div><div class="rt">Lease agreement 2026.pdf</div><div class="rs">Documents › Home · page 2 of 9</div>
+      <div class="snip">“…the Tenant shall give <b class="hl">60 days' written notice</b> before ending the lease and moving out…”</div></div>
+      <div class="end">yesterday<span class="pill">p. 2</span></div></div>
+    <div class="row it"><div class="pdf" style="filter:grayscale(1) brightness(.92)"><span class="tag" style="background:#4a5568">SCAN</span>${[22, 40, 54, 68, 82, 98, 112].map((y) => `<i style="top:${y}px;width:${70 + (y % 3) * 8}px"></i>`).join("")}</div>
+      <div><div class="rt">Move-out checklist (scanned).pdf</div><div class="rs">Downloads · scanned page 1</div><div class="snip">Found by what's printed on the page. No OCR step.</div></div>
+      <div class="end">3 Aug<span class="pill">p. 1</span></div></div>`,
+  video: `<div class="sec">Photos &amp; video</div><div class="grid4">
+    <div class="tile it hit"><div class="img">${ART.lake(0)}<div class="play"></div><div class="badge">2:41</div><div class="vprog"><i id="vp" style="width:58%"></i></div></div><div class="t">Lake walk.mp4</div><div class="d">Video · 4:38</div></div>
+    <div class="tile it"><div class="img">${ART.lake(14)}</div><div class="t">IMG_3310.jpg</div><div class="d">12 Jul 2025</div></div>
+    <div class="tile it"><div class="img">${ART.lake(-12)}</div><div class="t">IMG_3307.jpg</div><div class="d">12 Jul 2025</div></div>
+    <div class="tile it"><div class="img">${ART.lake(30)}<div class="play"></div><div class="badge">0:12</div></div><div class="t">Drone shot.mp4</div><div class="d">Video · 0:58</div></div></div>`,
+  weekend: `<div class="sec">Photos</div><div class="grid4">
+    <div class="tile it"><div class="img">${ART.beach()}</div><div class="t">IMG_4410.jpg</div><div class="d">Sat 10 Oct · 16:02</div></div>
+    <div class="tile it"><div class="img">${ART.friends()}</div><div class="t">IMG_4415.jpg</div><div class="d">Sat 10 Oct · 18:47</div></div>
+    <div class="tile it"><div class="img">${ART.food()}</div><div class="t">IMG_4421.jpg</div><div class="d">Sun 11 Oct · 13:20</div></div>
+    <div class="tile it"><div class="img">${ART.sunset()}</div><div class="t">IMG_4426.jpg</div><div class="d">Sun 11 Oct · 19:05</div></div></div>`,
+};
+
+/* ---------- build ---------- */
+function build() {
+  const files = [["🖼️", "IMG_4021.jpg", 210, 170], ["📄", "Scan0003.pdf", 1420, 150], ["🎙️", "Recording (12).m4a", 150, 770],
+    ["📝", "final_v2_REALLY_final.docx", 1250, 800], ["🖼️", "Screenshot 2026-03-14 221905.png", 620, 900], ["🎬", "VID_20250712_0931.mp4", 1290, 300]];
+  $("files").innerHTML = files.map(([i, n, x, y], k) => `<div class="fname" id="f${k}" style="left:${x}px;top:${y}px"><span class="ico">${i}</span>${n}</div>`).join("");
+  $("results").innerHTML = TL.queries.map((q, i) => `<div class="page" id="p${i}">${PAGES[q.page]}</div>`).join("");
+  window.PAGE_H = TL.queries.map((q, i) => $("p" + i).scrollHeight + 22);
+  $("steps").innerHTML = TL.queries.map(() => "<i></i>").join("");
+  $("wave").innerHTML = Array.from({ length: 22 }, () => "<i></i>").join("");
+  const orbs = [["🖼️", -330, -40], ["📄", 330, -40], ["🎙️", -360, 130], ["🎬", 360, 130], ["💻", -250, 260], ["⚙️", 250, 260]];
+  $("orbs").innerHTML = orbs.map(([e, x, y], i) => `<div class="orb" id="o${i}" style="left:${960 + x - 37}px;top:${360 + y - 37}px">${e}</div>`).join("");
+  const mts = [["📸", "Photos & screenshots"], ["📄", "PDFs, Word & slides"], ["🧾", "Scanned pages"], ["🎙️", "Voice notes"],
+    ["🎬", "Video moments"], ["💻", "Code & notes"], ["⚙️", "Settings & fixes"], ["📁", "Any folder, by name"]];
+  $("mgrid").innerHTML = mts.map(([e, l], i) => `<div class="mt" id="m${i}"><div class="e">${e}</div><div class="l">${l}</div></div>`).join("");
+}
+
+/* ---------- frame(t) ---------- */
+function frame(t) {
+  const S = TL.scenes;
+  // background drift
+  $("b1").style.transform = `translate(${-200 + 160 * Math.sin(t * .13)}px, ${-250 + 90 * Math.cos(t * .11)}px)`;
+  $("b2").style.transform = `translate(${1250 + 140 * Math.cos(t * .09)}px, ${380 + 120 * Math.sin(t * .12)}px)`;
+  $("b3").style.transform = `translate(${700 + 300 * Math.sin(t * .07)}px, ${700 + 60 * Math.cos(t * .15)}px)`;
+
+  // hook
+  const hk = win(t, S.hook[0], S.hook[1], .3, .5);
+  show($("hook"), hk, 0, 1 + .04 * prog(t, 0, 6));
+  show($("hook1"), easeOut(prog(t, .35, .7)), 30 * (1 - easeOut(prog(t, .35, .7))), 1, 8 * (1 - easeOut(prog(t, .35, .5))));
+  show($("hook2"), easeOut(prog(t, 2.3, .7)), 30 * (1 - easeOut(prog(t, 2.3, .7))), 1, 8 * (1 - easeOut(prog(t, 2.3, .5))));
+  for (let k = 0; k < 6; k++) {
+    const a = .6 + k * .32, e = easeOut(prog(t, a, .8));
+    const f = $("f" + k);
+    f.style.opacity = e * (k % 2 ? .75 : .9);
+    f.style.transform = `translate(${12 * Math.sin(t * .8 + k)}px, ${(1 - e) * 40 + 10 * Math.cos(t * .7 + k * 2)}px) rotate(${(k % 2 ? -1 : 1) * (2 + k * .4)}deg)`;
+    f.style.filter = `blur(${prog(t, 2.3, 1.2) * 3}px)`;
+  }
+
+  // logo
+  const lg = win(t, S.logo[0], S.logo[1], .2, .45);
+  show($("logo"), lg);
+  const li = prog(t, 6.0, .7);
+  show($("logoIcon"), easeOut(prog(t, 6.0, .25)), 0, lerp(.6, 1, easeBack(li)));
+  show($("wordmark"), easeOut(prog(t, 6.35, .6)), 30 * (1 - easeOut(prog(t, 6.35, .6))));
+  show($("tagline"), easeOut(prog(t, 6.8, .6)), 24 * (1 - easeOut(prog(t, 6.8, .6))));
+
+  // demo
+  const dm = win(t, S.demo[0], S.demo[1], .3, .5);
+  show($("demo"), dm);
+  const [k1, k2] = TL.keys;
+  const kv = win(t, 10.0, 11.0, .25, .3);
+  show($("keys"), kv, 0, lerp(.92, 1, easeOut(prog(t, 10, .3))));
+  const press = (tk) => { const p = prog(t, tk, .18); return p > 0 && p < 1 ? 1 : 0; };
+  [["k1", k1], ["k2", k2]].forEach(([id, tk]) => {
+    const down = t >= tk && t < 10.85;
+    $(id).style.transform = `translateY(${down ? 8 : 0}px)`;
+    $(id).style.boxShadow = down ? "0 2px 0 #0c0e14, 0 10px 30px rgba(0,0,0,.5), 0 0 0 3px rgba(132,169,255,.6)" : "";
+  });
+  const la = easeOut(prog(t, 10.75, .45));
+  show($("launcher"), la * dm, -30 * (1 - la), lerp(.96, 1, la));
+  // which query is active
+  const Q = TL.queries;
+  let qi = -1; for (let i = 0; i < Q.length; i++) if (t >= Q[i].start - .05) qi = i;
+  const qEl = $("q");
+  let typed = "", caret = true, listening = false;
+  if (qi >= 0) {
+    const q = Q[qi];
+    if (q.voice) {
+      const heard = q.start + 1.5;
+      listening = t < heard;
+      const words = q.text.split(" ");
+      const nw = clamp(Math.floor((t - heard) / .14) + 1, 0, words.length);
+      typed = t >= heard ? words.slice(0, nw).join(" ") : "";
+      caret = false;
+    } else {
+      const n = clamp(Math.floor((t - q.start) * TL.typing_cps), 0, q.text.length);
+      typed = q.text.slice(0, n);
+      caret = n < q.text.length || Math.floor(t * 2.2) % 2 === 0;
+    }
+  }
+  qEl.innerHTML = (typed ? typed.replace(/&/g, "&amp;").replace(/</g, "&lt;") : `<span class="ph">${listening ? "Listening…" : "Search files, photos, settings…"}</span>`) +
+    (caret && qi >= 0 && !listening ? '<span id="caret"></span>' : "");
+  if (qi < 0) qEl.innerHTML = '<span class="ph">Search files, photos, settings…</span>' + (Math.floor(t * 2.2) % 2 === 0 ? '<span id="caret"></span>' : "");
+  const vq = Q.find((q) => q.voice);
+  const micOn = vq && t >= vq.start && t < vq.start + 1.5;
+  $("mic").classList.toggle("on", !!micOn);
+  ["ring1", "ring2"].forEach((r, i) => {
+    const ph = ((t - (vq ? vq.start : 0)) * 1.4 + i * .5) % 1;
+    $(r).style.opacity = micOn ? (1 - ph) * .8 : 0; $(r).style.transform = `scale(${1 + ph * .6})`;
+  });
+  $("wave").style.display = micOn ? "flex" : "none";
+  [...$("wave").children].forEach((b, i) => { b.style.height = (10 + 38 * Math.abs(Math.sin(t * 9 + i * .7) * Math.sin(t * 3.1 + i * .3))) + "px"; });
+  // chip for the date query
+  const chipOn = vq ? easeOut(prog(t, vq.start + 1.5 + .14 * 4, .35)) : 0;
+  $("chip").style.display = chipOn > 0 ? "inline-flex" : "none";
+  $("chip").style.opacity = chipOn;
+  // pages: results stay up while the next query is typed, then swap (like the app)
+  const APPEAR = Q.map((q) => (q.voice ? q.start + 1.5 + .14 * q.text.split(" ").length : q.start + q.text.length / TL.typing_cps) + .25);
+  Q.forEach((q, i) => {
+    const appear = APPEAR[i], gone = i + 1 < Q.length ? APPEAR[i + 1] : S.demo[1];
+    const pg = $("p" + i);
+    const vis = t >= appear && t < gone;
+    pg.style.visibility = vis ? "visible" : "hidden";
+    pg.style.opacity = vis ? 1 - easeInOut(prog(t, gone - .2, .2)) : 0;
+    [...pg.querySelectorAll(".it")].forEach((it, j) => {
+      const e = easeOut(prog(t, appear + j * .07, .4));
+      it.style.opacity = e; it.style.transform = `translateY(${(1 - e) * 22}px)`;
+    });
+    const sec = pg.querySelector(".sec"); if (sec) sec.style.opacity = easeOut(prog(t, appear, .3));
+    const vp = pg.querySelector("#vp"); if (vp) vp.style.width = (58 + 6 * clamp((t - appear - .6) / 3)) + "%";
+    if (i === qi) {
+      const ce = easeOut(prog(t, appear + .15, .5));
+      $("c1").textContent = q.caption; $("c2").textContent = q.sub;
+      show($("caption"), ce * (1 - easeInOut(prog(t, gone - .25, .25))), 0);
+      $("caption").style.transform = `translateX(${(1 - ce) * -40}px)`;
+    }
+  });
+  if (qi < 0) show($("caption"), 0);
+  // the launcher grows to fit the page on screen (like the app), easing between heights
+  let h = 0;
+  Q.forEach((q, i) => {
+    const typedAt = q.voice ? q.start + 1.5 + .14 * q.text.split(" ").length : q.start + q.text.length / TL.typing_cps;
+    const appear = typedAt + .25;
+    const prev = i ? PAGE_H[i - 1] : 0;
+    if (t >= q.start - .05) h = lerp(prev, PAGE_H[i], easeInOut(prog(t, appear - .05, .35)));
+  });
+  $("results").style.height = h + "px";
+  [...$("steps").children].forEach((d, i) => d.classList.toggle("on", i === qi));
+  $("steps").style.opacity = easeOut(prog(t, 11, .5));
+
+  // privacy
+  const pv = win(t, S.privacy[0], S.privacy[1], .45, .45);
+  show($("privacy"), pv);
+  const pi = easeBack(prog(t, 35.2, .8));
+  show($("pc"), easeOut(prog(t, 35.1, .5)), 0, lerp(.85, 1, pi));
+  for (let i = 0; i < 6; i++) {
+    const e = easeOut(prog(t, 35.6 + i * .12, .5)), o = $("o" + i);
+    const ang = t * .25 + i;
+    o.style.opacity = e; o.style.transform = `translate(${6 * Math.sin(ang)}px, ${6 * Math.cos(ang * 1.3) + (1 - e) * 20}px) scale(${lerp(.7, 1, e)})`;
+  }
+  show($("cloud"), easeOut(prog(t, 36.6, .5)) * .9, 0, 1);
+  const xg = prog(t, 37.4, .4);
+  $("x1").style.strokeDasharray = "200"; $("x1").style.strokeDashoffset = String(200 * (1 - easeOut(xg)));
+  show($("pv1"), easeOut(prog(t, 36.2, .6)), 24 * (1 - easeOut(prog(t, 36.2, .6))));
+  show($("pv2"), easeOut(prog(t, 37.0, .6)), 20 * (1 - easeOut(prog(t, 37.0, .6))));
+
+  // montage
+  const mo = win(t, S.montage[0], S.montage[1], .4, .45);
+  show($("montage"), mo);
+  show($("mh"), easeOut(prog(t, 42.1, .6)), 24 * (1 - easeOut(prog(t, 42.1, .6))));
+  for (let i = 0; i < 8; i++) {
+    const e = easeBack(prog(t, 42.5 + i * .14, .55));
+    const m = $("m" + i);
+    m.style.opacity = clamp(prog(t, 42.5 + i * .14, .3));
+    m.style.transform = `translateY(${(1 - e) * 40}px) scale(${lerp(.85, 1, e)})`;
+  }
+
+  // cta
+  const ct = win(t, S.cta[0], S.cta[1] + 1, .5, .5);
+  show($("cta"), ct);
+  show($("ctaIcon"), easeOut(prog(t, 48.0, .3)), 0, lerp(.6, 1, easeBack(prog(t, 48.0, .7))));
+  [["ct1", 48.35], ["ct2", 48.7], ["ct3", 49.1], ["cmd", 49.5], ["ct4", 50.2]].forEach(([id, a]) => {
+    const e = easeOut(prog(t, a, .6));
+    const el = $(id); el.style.opacity = e;
+    el.style.transform = (id === "cmd" ? "translateX(-50%) " : "") + `translateY(${(1 - e) * 24}px)`;
+  });
+  // fade to black at the very end
+  $("fade").style.opacity = easeInOut(prog(t, S.cta[1] - 1.2, 1.2)) + (1 - easeOut(prog(t, 0, .5)));
+}
+
+window.frame = frame;
+build();
+const qt = new URLSearchParams(location.search).get("t");
+frame(qt ? parseFloat(qt) : 7.5);
+</script>
+</body>
+</html>

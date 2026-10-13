@@ -14,17 +14,27 @@
 #   $env:SMARTSEARCH_DIR = "D:\Apps\SmartSearch"   install somewhere else
 #   $env:SMARTSEARCH_NO_AUTOSTART = "1"            don't start with Windows
 #   $env:SMARTSEARCH_NO_LAUNCH = "1"               don't start it at the end
+#   $env:SMARTSEARCH_NO_SHORTCUT = "1"             no Start Menu shortcut
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"   # Invoke-WebRequest is many times faster without the progress bar
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
+$env:HF_HUB_DISABLE_SYMLINKS_WARNING = "1"  # Windows without Developer Mode: the cache copies instead; harmless
 $Repo = "Ayushmaniar/smartsearch"
 $Branch = "main"
 
 function Say($msg) { Write-Host "  $msg" }
 function Step($msg) { Write-Host ""; Write-Host "==> $msg" -ForegroundColor Cyan }
 function Fail($msg) { Write-Host ""; Write-Host "  $msg" -ForegroundColor Red; throw $msg }
+# Run a program, echo its output, return its exit code. Windows PowerShell 5.1 would otherwise turn
+# anything a program writes to stderr (uv's normal progress) into a terminating error.
+function Native([string]$exe, [string[]]$argv) {
+    $old = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try { & $exe @argv 2>&1 | ForEach-Object { Say "$_" } } finally { $ErrorActionPreference = $old }
+    return $LASTEXITCODE
+}
 
 Write-Host ""
 Write-Host "  SmartSearch - search your PC by meaning, privately" -ForegroundColor White
@@ -92,42 +102,49 @@ Say "uv: $uv"
 $py = Join-Path $Dir ".venv\Scripts\python.exe"
 if (-not (Test-Path $py)) {
     # uv fetches a standalone Python 3.12 if this PC has none; nothing is installed system-wide.
-    & $uv venv --python 3.12 (Join-Path $Dir ".venv") 2>&1 | ForEach-Object { Say $_ }
+    $null = Native $uv @("venv", "--python", "3.12", (Join-Path $Dir ".venv"))
 }
 if (-not (Test-Path $py)) { Fail "Could not create the Python environment." }
 
 Step "Packages (first install downloads ~400 MB)"
-& $uv pip install --python $py -r (Join-Path $Dir "requirements.txt") 2>&1 | ForEach-Object { Say $_ }
-if ($LASTEXITCODE -ne 0) { Fail "Package install failed (see above)." }
+if ((Native $uv @("pip", "install", "--python", $py, "-r", (Join-Path $Dir "requirements.txt"))) -ne 0) {
+    Fail "Package install failed (see above)."
+}
 if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
     Say "NVIDIA GPU found: adding CUDA libraries for fast voice search"
-    & $uv pip install --python $py -r (Join-Path $Dir "requirements-nvidia.txt") 2>&1 | ForEach-Object { Say $_ }
-    if ($LASTEXITCODE -ne 0) { Say "(CUDA libraries failed to install; voice search will use the CPU)" }
+    if ((Native $uv @("pip", "install", "--python", $py, "-r", (Join-Path $Dir "requirements-nvidia.txt"))) -ne 0) {
+        Say "(CUDA libraries failed to install; voice search will use the CPU)"
+    }
 }
 
 # ---- model ------------------------------------------------------------------------------------
 Step "Search model (EmbeddingGemma 2, 485 MB, Apache-2.0)"
-& $py -c "import os; from smartsearch import config; from huggingface_hub import hf_hub_download as d; p=config.MODEL_PATH; print('  already here') if os.path.exists(p) else d(config.MODEL_REPO, os.path.basename(p), local_dir=os.path.dirname(p))"
-if ($LASTEXITCODE -ne 0) { Say "(model download failed; SmartSearch will retry when it starts)" }
+$get = "import os; from smartsearch import config; from huggingface_hub import hf_hub_download as d; " +
+       "p = config.MODEL_PATH; print('already here') if os.path.exists(p) else " +
+       "print('saved to', d(config.MODEL_REPO, os.path.basename(p), local_dir=os.path.dirname(p)))"
+if ((Native $py @("-c", $get)) -ne 0) { Say "(model download failed; SmartSearch will retry when it starts)" }
 
 # ---- shortcut, autostart, launch ----------------------------------------------------------------
-Step "Shortcuts"
 $pyw = Join-Path $Dir ".venv\Scripts\pythonw.exe"
-$programs = [Environment]::GetFolderPath("Programs")
-$lnk = Join-Path $programs "SmartSearch.lnk"
-$shell = New-Object -ComObject WScript.Shell
-$s = $shell.CreateShortcut($lnk)
-$s.TargetPath = $pyw
-$s.Arguments = "-m smartsearch.app"
-$s.WorkingDirectory = $Dir
-$s.IconLocation = (Join-Path $Dir "smartsearch\assets\icon.ico")
-$s.Description = "Search your PC by meaning (Alt+Space)"
-$s.Save()
-Say "Start Menu: SmartSearch"
+if ($env:SMARTSEARCH_NO_SHORTCUT -ne "1") {
+    Step "Shortcuts"
+    $programs = [Environment]::GetFolderPath("Programs")
+    $lnk = Join-Path $programs "SmartSearch.lnk"
+    $shell = New-Object -ComObject WScript.Shell
+    $s = $shell.CreateShortcut($lnk)
+    $s.TargetPath = $pyw
+    $s.Arguments = "-m smartsearch.app"
+    $s.WorkingDirectory = $Dir
+    $s.IconLocation = (Join-Path $Dir "smartsearch\assets\icon.ico")
+    $s.Description = "Search your PC by meaning (Alt+Space)"
+    $s.Save()
+    Say "Start Menu: SmartSearch"
+}
 
 if ($env:SMARTSEARCH_NO_AUTOSTART -ne "1") {
-    & $py -c "from smartsearch import autostart; autostart.set_enabled(True)"
-    Say "Starts with Windows (turn off from the tray icon menu)"
+    if ((Native $py @("-c", "from smartsearch import autostart; autostart.set_enabled(True)")) -eq 0) {
+        Say "Starts with Windows (turn off from the tray icon menu)"
+    }
 }
 
 if ($env:SMARTSEARCH_NO_LAUNCH -ne "1") {

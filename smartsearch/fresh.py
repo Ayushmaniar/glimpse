@@ -182,7 +182,8 @@ class Watcher:
             return ""
         last = self.stats["last"]
         ago = "" if not last else f" · last new file {_ago(time.time() - last)}"
-        return f"watching {len(self._roots)} folders{ago}"
+        n = len(self._roots)
+        return f"watching {n} folder{'' if n == 1 else 's'}{ago}"
 
 
 def _ago(s: float) -> str:

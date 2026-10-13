@@ -44,7 +44,8 @@ DEFAULTS: dict = {
     # Audio: split into windows of N seconds.
     "audio_window_s": 30,
     "hotkey": ["alt+space", "ctrl+shift+space", "alt+shift+space"],  # first free one wins
-    "whisper_model": "auto",  # auto: large-v3-turbo on an NVIDIA GPU, small on CPU; or any faster-whisper name
+    "whisper_model": "auto",  # auto: large-v3-turbo on an NVIDIA GPU, base on CPU; or any faster-whisper name
+    "voice_language": None,   # None: detect per query; "en", "hi", ...: faster on CPU (skips detection)
 }
 
 _lock = threading.Lock()

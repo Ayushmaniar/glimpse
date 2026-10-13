@@ -1,0 +1,12 @@
+{
+  "name": "smartsearch-launch-video",
+  "private": true,
+  "description": "Renders docs/launch.mp4 from scenes.html (see README.md)",
+  "license": "MIT",
+  "scripts": {
+    "build": "powershell -ExecutionPolicy Bypass -File build.ps1"
+  },
+  "dependencies": {
+    "playwright-core": "1.49.1"
+  }
+}

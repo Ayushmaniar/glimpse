@@ -14,5 +14,6 @@ models/*
 video/node_modules/
 video/out/
 video/frames/
+video/_built.html
 
 *.log
