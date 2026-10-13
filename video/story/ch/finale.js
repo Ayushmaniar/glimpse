@@ -149,7 +149,7 @@
       wrap.innerHTML = `
         <div class="fin-title" style="position:absolute;left:0;right:0;top:452px;text-align:center;font-family:var(--display);font-weight:700;font-size:130px;line-height:1;letter-spacing:-0.04em;color:#fff;white-space:nowrap;text-shadow:0 0 80px rgba(120,160,255,.35)"></div>
         <div class="fin-tag" style="position:absolute;left:0;right:0;top:614px;text-align:center;font-family:var(--font);font-weight:500;font-size:46px;line-height:1.2;letter-spacing:-0.01em;color:#c9cfdb;white-space:nowrap">Find the <span class="grad">moment</span>, not the file.</div>
-        <div class="fin-inst" style="position:absolute;left:0;right:0;top:700px;text-align:center;font-family:var(--font);font-size:30px;line-height:1.2;color:#9aa3b5;white-space:nowrap">Free &amp; open source &middot; Windows 10 &amp; 11</div>
+        <div class="fin-inst" style="position:absolute;left:0;right:0;top:700px;text-align:center;font-family:var(--font);font-size:30px;line-height:1.2;color:#9aa3b5;white-space:nowrap">Free &amp; open source &middot; any Windows 10 or 11 PC &middot; one-line install</div>
         <div class="fin-keys" style="position:absolute;left:0;right:0;top:764px;">
           <div style="display:flex;justify-content:center;align-items:center;gap:16px;white-space:nowrap">
             <div class="fin-key" style="width:132px">Alt</div>

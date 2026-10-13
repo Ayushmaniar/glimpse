@@ -277,6 +277,13 @@ def text_results(entry: dict, d: dict, spec: dict, folder: Path, port: int, toke
                          "subtitle": r.get("subtitle") or "", "snippet": r.get("snippet") or "", "badge": r.get("badge"),
                          "icon": r.get("icon"), "kind": r.get("kind"), "page": (r.get("meta") or {}).get("page"),
                          "_id": r["id"]})
+    # live controls the app shows with settings results (brightness, volume, ...): only their names and values,
+    # never the status rows (those can hold a Wi-Fi name)
+    for s in d["sections"]:
+        ctl = (s.get("widget") or {}).get("controls")
+        if ctl:
+            entry["controls"] = [{k: c[k] for k in ("id", "kind", "label", "icon", "value", "unit") if k in c} for c in ctl]
+            break
     order = list(spec.get("show", {}).keys())
     rows.sort(key=lambda r: order.index(r["source"]))
     entry["rows"] = rows

@@ -106,8 +106,10 @@ class ImagesSource(Source):
         files = list(walk(EXTS, MIN_BYTES))
         present = {p for p, _, _ in files}
         if walk_mod.RECENT_SINCE is None:
+            ok = walk_mod.prunable()
             for p in set(known) - present:
-                self.store.remove_path(self.name, p, commit=False)
+                if ok(p):
+                    self.store.remove_path(self.name, p, commit=False)
         skip = frame_skips(files, config.get("frame_sample_every"))
         status = self.store.file_status(self.name) if skip else {}
         for p, m, s in files:

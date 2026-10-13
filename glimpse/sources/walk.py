@@ -115,6 +115,17 @@ def wanted(path: str) -> bool:
     return False
 
 
+def prunable() -> Callable[[str], bool]:
+    """Which files a scan may forget because it didn't see them. Never those in a configured folder that is
+    unreachable right now (an unplugged drive), and nothing at all when no configured folder exists: a bad
+    settings change or a missing drive must not wipe the index."""
+    roots = [os.path.normcase(os.path.abspath(r)).rstrip(os.sep) + os.sep for r in config.get("folders")]
+    gone = [r for r, raw in zip(roots, config.get("folders")) if not os.path.isdir(raw)]
+    if len(gone) == len(roots):
+        return lambda path: False
+    return lambda path: not any(os.path.normcase(os.path.abspath(path)).startswith(r) for r in gone)
+
+
 def stat(path: str, min_size: int = 1) -> tuple[float, int] | None:
     """(mtime, size) of a local, big-enough file; None for missing, cloud-only or tiny files."""
     try:
@@ -197,8 +208,10 @@ def sync(store: Store, source: str, exts: set[str], handle: Callable[[str], str]
         if not old or abs(old[0] - mtime) > 1e-3 or old[1] != size:
             todo.append((p, mtime, size))
     if RECENT_SINCE is None:
+        ok = prunable()
         for p in set(known) - present:
-            store.remove_path(source, p, commit=False)
+            if ok(p):
+                store.remove_path(source, p, commit=False)
     store.commit()
     if not todo:
         return

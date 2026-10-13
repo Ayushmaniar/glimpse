@@ -56,7 +56,7 @@
     { q: "mountains and a lake", caption: ["No tags. No albums. No filenames.", "It just knows what you mean."] },
     { q: "what is a bayesian network", kind: "text", caption: ["Documents, by meaning.", "The exact page. The exact sentence."] },
     { q: "code that finds duplicate photos", kind: "text", caption: ["Code, by what it does.", "Even when you forgot what you named it."] },
-    { q: "my screen is too dim", kind: "text", caption: ["Not just your files. Your whole PC.", "Say what's wrong. Get the right setting."] },
+    { q: "my screen is too dim", kind: "text", caption: ["Not just your files. Your whole PC.", "Say what's wrong. Fix it right there."] },
     { q: "make text bigger", kind: "rapid", subs: ["make text bigger", "eyes hurt at night", "no sound from speakers", "uninstall an app"],
       caption: ["Settings. Apps. Fixes.", "One search box for all of Windows."] },
     { q: "sunset at the beach", voice: true, caption: ["Or just say it.", "Voice search runs on your PC too."] },

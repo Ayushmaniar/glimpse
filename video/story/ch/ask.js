@@ -8,13 +8,13 @@
   // one step per search; a rapid slot expands into its quick searches, which share one caption and have no hero
   const Q = [];
   TL.QUERIES.forEach((q) => {
-    const M = MEDIA.queries[q.k];
-    if (!q.subs) { Q.push({ ...q, qk: q.k, M }); return; }
-    q.subs.forEach((sb) => Q.push({ ...sb, kind: "text", qk: q.k, sub: sb.i, rapid: true, M: M.subs[sb.i], words: [], listen: null,
+    if (!q.subs) { Q.push({ ...q, qk: q.k }); return; }
+    q.subs.forEach((sb) => Q.push({ ...sb, kind: "text", qk: q.k, sub: sb.i, rapid: true, words: [], listen: null,
                                     hero: Infinity, caption: sb.i === 0 ? q.caption : null, capTo: q.end - TL.b(0.5) }));
   });
   const N = Q.length, BEAT = TL.BEAT, END = TL.ACT.brain[0];
-  const MQ = Q.map((s) => s.M);
+  // the prepared media of step k (MEDIA is loaded after this file runs, so look it up when needed)
+  const mq = (k) => (Q[k].rapid ? MEDIA.queries[Q[k].qk].subs[Q[k].sub] : MEDIA.queries[Q[k].qk]);
   const arrive = (k, j) => (Q[k].rapid ? TL.arrive(Q[k].qk, j, Q[k].sub) : TL.arrive(Q[k].qk, j));
   // a quick search that follows another of the same slot: the panel stays open and the rows swap on Enter
   const cont = (k) => k > 0 && !!Q[k].rapid && !!Q[k - 1].rapid;
@@ -35,9 +35,9 @@
   const HL = "background:rgba(132,169,255,.22);color:#d4e3ff;border-radius:4px;padding:0 2px";
   const QHL = "color:#9dbcff;font-weight:600;text-shadow:0 0 18px rgba(132,169,255,.55);border-bottom:2px solid #84a9ff";
 
-  let root, panel, cv, g, shade, wave, bars = [], qSpan, qPh, caret, enterKey, mic, rings = [], chipL, chipT;
+  let dimEl, root, panel, cv, g, shade, wave, bars = [], qSpan, qPh, caret, enterKey, mic, rings = [], chipL, chipT;
   const LAY = [], BY = [], capEls = [], statusEls = [], headEls = [], rowEls = [], pillEls = {}, progEls = {},
-        quoteEls = {}, codeEls = {}, bigEls = {};
+        quoteEls = {}, codeEls = {}, bigEls = {}, ansEls = {};
 
   const rx = (x) => x - LX, ry = (y) => y - LY;
   const kS = (t) => { let k = -1; for (let i = 0; i < N; i++) if (t >= S[i]) k = i; return k; };
@@ -47,6 +47,18 @@
   // when a search's rows leave: at the next search, or (inside a rapid slot) when the next quick search hits Enter
   const leave = (k) => (k < N - 1 && cont(k + 1) ? E[k + 1] : nextS(k));
   const headEnd = (k) => leave(k);
+  // a settings search with a slider: the knob is dragged over beats 1-2.5 of its hero
+  const slideT0 = (k) => HR[k] + TL.b(1), slideT1 = (k) => HR[k] + TL.b(2.5);
+  const slideU = (k, t) => ease.inOut(seg(t, slideT0(k), slideT1(k)));
+  // "my screen is too dim": the whole frame dims while it is typed and comes back up as the slider moves
+  function dimAt(t) {
+    for (let k = 0; k < N; k++) {
+      if (!bigEls[k] || !bigEls[k].slider) continue;
+      const d = ease.inOut(seg(t, S[k] + TL.b(0.5), E[k] + TL.b(0.5))) * (1 - slideU(k, t));
+      if (d > 0) return 0.5 * d;
+    }
+    return 0;
+  }
 
   const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -68,7 +80,7 @@
 
   // ---- layout ------------------------------------------------------------------------------------------
   function layoutFor(k) {
-    const M = MQ[k];
+    const M = mq(k);
     const hasVideo = !!M.video;
     const nPh = Math.min(M.images.length, MAXR - (hasVideo ? 1 : 0));
     const kinds = [];
@@ -101,7 +113,7 @@
 
   // text results: rows (list), cards (settings) and emoji tiles, grouped by section as the app shows them
   function layoutText(k) {
-    const rows = MQ[k].rows || [];
+    const rows = mq(k).rows || [];
     const groups = [];
     rows.forEach((r) => {
       let g0 = groups.find((x) => x.label === r.label && x.panel === r.panel);
@@ -130,7 +142,8 @@
       bottom = gb;
       y = bottom + 18;
     });
-    const total = Object.values(MQ[k].sections).reduce((a, b) => a + b, 0);
+    const total = Object.values(mq(k).sections).reduce((a, b) => a + b, 0);
+    if (Q[k].rapid) return { items: [], heads: [], panelH: STATUS_Y + 44 - LY, total };
     return { items, heads, panelH: bottom + 24 - LY, total };
   }
 
@@ -294,7 +307,7 @@
 
   // the best photo or video opens full screen; the video plays the real clip at real speed from the hero
   function frameSrc(t, k) {
-    const V = MQ[k].video;
+    const V = mq(k).video;
     const f = clamp(1 + Math.floor((t - HR[k]) * 30), 1, V.frames);
     return `${V.dir}/${String(f).padStart(3, "0")}.jpg`;
   }
@@ -306,7 +319,7 @@
     const holdEnd = nextS(k) ?? (END - 0.4);
     const kbT = smooth(seg(t, HR[k] + EXPAND, holdEnd));
     const kb = lerp(1, 1 + 0.08 * kbT, m), pan = 24 * kbT * m * (k % 2 ? -1 : 1);
-    const src = MQ[k].video ? frameSrc(t, k) : MQ[k].images[0].hero;
+    const src = mq(k).video ? frameSrc(t, k) : mq(k).images[0].hero;
     const im = img(src);
     if (!im || !im.naturalWidth) return;
     g.save();
@@ -322,7 +335,7 @@
   // the PDF page Quick Look: a large white page on the right half, clear of the caption
   function drawPage(t, h) {
     const k = h.k, m = h.m, a = h.a;
-    const pg = MQ[k].page, im = img(pg.src);
+    const pg = mq(k).page, im = img(pg.src);
     if (!im || !im.naturalWidth) return;
     const FX = 950, FY = 140, FW = 900, FH = 675;   // right of the caption, which ends near x 870
     const sc = lerp(0.9, 1, m);
@@ -481,7 +494,7 @@
   function updateTextHeroes(t, h) {
     for (let k = 0; k < N; k++) {
       if (!isText(k)) continue;
-      const M = MQ[k];
+      const M = mq(k);
       const hk = h && h.k === k ? h : null;
       const vis = hk ? hk.m * hk.a : 0;
       if (quoteEls[k]) textFx(quoteEls[k], t, HR[k] + TL.b(0.5), capEnd(k));
@@ -512,6 +525,14 @@
         b.root.style.opacity = vis.toFixed(3);
         b.root.style.transform = `translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
         b.btn.style.transform = `scale(${press.toFixed(4)})`;
+        if (b.slider) {
+          const s2 = b.slider, u = slideU(k, t);
+          const v = Math.round(lerp(s2.from, s2.to, u)), pc = v + "%";
+          s2.fill.style.width = pc; s2.knob.style.left = pc; s2.val.textContent = v + s2.unit;
+          s2.knob.style.transform = `scale(${(1 + 0.12 * Math.min(seg(t, slideT0(k) - 0.15, slideT0(k)), 1 - seg(t, slideT1(k), slideT1(k) + 0.2))).toFixed(3)})`;
+          s2.cur.style.left = `calc(${pc} - 6px)`; s2.cur.style.top = "6px";
+          s2.cur.style.opacity = (seg(t, slideT0(k) - 0.5, slideT0(k) - 0.2) * (1 - seg(t, slideT1(k) + 0.3, slideT1(k) + 0.6))).toFixed(3);
+        }
         b.btn.style.filter = `brightness(${(1 + 0.35 * pulse(t, P, 0.12)).toFixed(3)})`;
       }
     }
@@ -522,7 +543,7 @@
     name: "ask", z: 20,
     async init() {
       // Quick Look images are not in the photo preload list
-      await Promise.all(MQ.map((M) => (M.page ? load(M.page.src) : null)));
+      await Promise.all(Q.map((_, k) => mq(k)).map((M) => (M.page ? load(M.page.src) : null)));
 
       root = el("div", "position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;display:none", document.getElementById("ui"));
 
@@ -569,7 +590,7 @@
       for (let k = 0; k < N; k++) {
         LAY[k] = isText(k) ? layoutText(k) : layoutFor(k);
         BY[k] = SIM.bodies.filter((b) => b.role === "result" && b.q === Q[k].qk).sort((a, b) => a.j - b.j);
-        const M = MQ[k];
+        const M = mq(k);
         const label = M.video ? "Video moments &amp; photos" : esc(LAY[k].heads[0].text);
         statusEls[k] = el("div", `position:absolute;left:${rx(BAR.x)}px;top:${STATUS_Y - LY}px;font:400 18px/24px var(--font);color:#9aa3b5;white-space:nowrap;display:none`, panel,
           `${label} &middot; ${LAY[k].total} results &middot; <span style="font-family:var(--mono);color:#c9cfdb">${M.ms} ms</span>`);
@@ -589,12 +610,13 @@
       root.appendChild(cv);
       g = cv.getContext("2d");
 
+      dimEl = el("div", "position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;background:#000;opacity:0;z-index:5", root);
       shade = el("div", "position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;opacity:0;" +
         "background:radial-gradient(1100px 760px at 0% 100%,rgba(4,5,9,.88),rgba(4,5,9,0) 72%),linear-gradient(0deg,rgba(4,5,9,.5),rgba(4,5,9,0) 42%)", root);
 
       // Quick Looks
       for (let k = 0; k < N; k++) {
-        const M = MQ[k];
+        const M = mq(k);
         if (M.video) {
           pillEls[k] = el("div", "position:absolute;left:120px;top:96px;display:none", root,
             '<div style="display:inline-flex;align-items:center;gap:12px;padding:10px 22px 10px 18px;border-radius:999px;background:rgba(19,22,30,.72);' +
@@ -648,6 +670,7 @@
         }
         if (M.rows && M.rows[0] && M.rows[0].panel === "cards" && !M.page && !M.context && !Q[k].rapid) {
           const r0 = M.rows[0];
+          const sl = (M.controls || []).find((c) => c.kind === "slider");
           const btn = el("button", "position:absolute;left:56px;bottom:52px;height:66px;width:330px;border:0;border-radius:18px;background:#3466f6;color:#fff;" +
             "font:600 24px/1 var(--font);box-shadow:0 14px 40px rgba(52,102,246,.45);cursor:default;transform-origin:50% 50%", null, "Open settings &#8629;");
           const card = el("div", "position:absolute;left:510px;top:340px;width:900px;height:400px;box-sizing:border-box;display:none;border-radius:32px;background:rgba(24,27,36,.95);" +
@@ -655,9 +678,53 @@
             `<div style="position:absolute;left:56px;top:56px;width:120px;height:120px;border-radius:30px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:64px;line-height:1">${esc(r0.icon)}</div>` +
             `<div style="position:absolute;left:206px;right:40px;top:58px;font:700 54px/1.1 var(--display);letter-spacing:-.02em;color:#fff">${esc(r0.title)}</div>` +
             `<div style="position:absolute;left:206px;right:40px;top:136px;font:400 26px/1.35 var(--font);color:#aab2c3">${esc(r0.subtitle)}</div>`);
-          card.appendChild(btn);
-          bigEls[k] = { root: card, btn };
+          if (sl) {
+            // the real control the app shows for this search, dragged up on screen; the button moves to the right
+            btn.style.left = "auto"; btn.style.right = "56px"; btn.style.top = "56px"; btn.style.bottom = "auto";
+            btn.style.width = "auto"; btn.style.padding = "0 26px"; btn.style.height = "56px"; btn.style.fontSize = "21px";
+            btn.style.background = "rgba(255,255,255,.08)"; btn.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,.14)";
+            const row = el("div", "position:absolute;left:56px;right:56px;bottom:56px;height:86px;border-radius:22px;background:rgba(255,255,255,.05);" +
+              "box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)", card,
+              `<div style="position:absolute;left:26px;top:0;height:86px;line-height:86px;font-size:34px">${esc(sl.icon)}</div>` +
+              `<div style="position:absolute;left:80px;top:0;height:86px;line-height:86px;font:500 26px/86px var(--font);color:#aab2c3">${esc(sl.label)}</div>`);
+            const track = el("div", "position:absolute;left:250px;right:150px;top:40px;height:6px;border-radius:3px;background:rgba(255,255,255,.12)", row);
+            const fill = el("div", "position:absolute;left:0;top:0;height:6px;border-radius:3px;background:linear-gradient(90deg,#84a9ff,#b79bff)", track);
+            const knob = el("div", "position:absolute;top:-13px;width:32px;height:32px;margin-left:-16px;border-radius:50%;background:#fff;" +
+              "box-shadow:0 0 0 4px #84a9ff,0 6px 18px rgba(0,0,0,.45)", track);
+            const val = el("div", "position:absolute;right:28px;top:0;height:86px;line-height:86px;font:700 30px/86px var(--font);color:#fff;font-variant-numeric:tabular-nums", row);
+            const cur = el("div", "position:absolute;left:0;top:0;width:34px;height:40px", track,
+              '<svg viewBox="0 0 24 28" width="34" height="40"><path d="M3 2v20l5-5 3.5 8 3.4-1.5-3.5-7.8H18z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>');
+            bigEls[k] = { root: card, btn, slider: { fill, knob, val, cur, from: 30, to: Math.max(80, sl.value || 90), unit: sl.unit || "" } };
+          } else {
+            card.appendChild(btn);
+            bigEls[k] = { root: card, btn };
+          }
         }
+      }
+
+      // rapid searches: the top answer as one big card under the launcher (the small cards would be unreadable)
+      for (let k = 0; k < N; k++) {
+        if (!Q[k].rapid) continue;
+        const M = mq(k), r0 = M.rows[0];
+        if (!r0) continue;
+        const vol = (M.controls || []).find((c) => c.kind === "slider" && c.id === "volume");
+        const card = el("div", `position:absolute;left:510px;top:330px;width:900px;height:${vol ? 290 : 190}px;box-sizing:border-box;display:none;border-radius:30px;` +
+          "background:rgba(24,27,36,.95);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 50px 120px rgba(0,0,0,.55);transform-origin:50% 0", root,
+          `<div style="position:absolute;left:40px;top:40px;width:110px;height:110px;border-radius:28px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:58px;line-height:1">${esc(r0.icon)}</div>` +
+          `<div style="position:absolute;left:180px;right:40px;top:44px;font:700 50px/1.1 var(--display);letter-spacing:-.02em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r0.title)}</div>` +
+          `<div style="position:absolute;left:180px;right:40px;top:110px;font:400 24px/1.35 var(--font);color:#aab2c3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r0.subtitle)}</div>`);
+        const a = { root: card };
+        if (vol) {
+          const row = el("div", "position:absolute;left:40px;right:40px;bottom:36px;height:76px;border-radius:20px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)", card,
+            `<div class="ic" style="position:absolute;left:22px;top:0;height:76px;line-height:76px;font-size:30px">${esc(vol.icon)}</div>` +
+            `<div style="position:absolute;left:72px;top:0;font:500 24px/76px var(--font);color:#aab2c3">${esc(vol.label)}</div>`);
+          const track = el("div", "position:absolute;left:210px;right:130px;top:35px;height:6px;border-radius:3px;background:rgba(255,255,255,.12)", row);
+          a.fill = el("div", "position:absolute;left:0;top:0;height:6px;border-radius:3px;background:linear-gradient(90deg,#84a9ff,#b79bff)", track);
+          a.knob = el("div", "position:absolute;top:-12px;width:30px;height:30px;margin-left:-15px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px #84a9ff,0 6px 18px rgba(0,0,0,.45)", track);
+          a.val = el("div", "position:absolute;right:26px;top:0;font:700 28px/76px var(--font);color:#fff;font-variant-numeric:tabular-nums", row);
+          a.to = Math.max(70, vol.value || 0);
+        }
+        ansEls[k] = a;
       }
 
       // captions, lower-left
@@ -724,8 +791,6 @@
         if (Q[i].rapid) {
           // quick swaps: the status line changes in place; the section header stays up across the slot
           textFx(statusEls[i], t, tIn, headEnd(i) - 0.1, { dur: 0.1, rise: 6 });
-          let last = i; while (last + 1 < N && cont(last + 1)) last++;
-          headEls[i].forEach((e) => (cont(i) ? (e.style.display = "none") : textFx(e, t, tIn, headEnd(last))));
           continue;
         }
         textFx(statusEls[i], t, tIn, headEnd(i));
@@ -734,6 +799,21 @@
 
       updateRows(t);
       updateTextHeroes(t, h);
+      dimEl.style.opacity = dimAt(t).toFixed(3);
+      for (const key of Object.keys(ansEls)) {
+        const kk = Number(key), a = ansEls[kk], t0 = arrive(kk, 0), lv = leave(kk);
+        const v = seg(t, t0, t0 + 0.12) * (1 - seg(t, lv, lv + 0.1));
+        a.root.style.display = v > 0.001 ? "" : "none";
+        if (v <= 0.001) continue;
+        const s = lerp(0.9, 1, ease.backOut(seg(t, t0, t0 + TL.b(0.6)), 1.4));
+        a.root.style.opacity = v.toFixed(3);
+        a.root.style.transform = `translateY(${((1 - seg(t, t0, t0 + 0.2)) * 30).toFixed(1)}px) scale(${s.toFixed(4)})`;
+        if (a.fill) {
+          const u = ease.inOut(seg(t, t0 + TL.b(0.25), t0 + TL.b(1)));
+          const val = Math.round(a.to * u), pc = val + "%";
+          a.fill.style.width = pc; a.knob.style.left = pc; a.val.textContent = pc;
+        }
+      }
 
       // hero, captions, video pills and progress
       shade.style.opacity = hm.toFixed(3);
@@ -741,7 +821,7 @@
       for (const key of Object.keys(pillEls)) { const kk = Number(key); textFx(pillEls[kk], t, HR[kk] + CAP_IN, capEnd(kk)); }
       for (const key of Object.keys(progEls)) {
         const kk = Number(key);
-        const V = MQ[kk].video;
+        const V = mq(kk).video;
         if (h && h.k === kk) {
           const f = clamp(1 + Math.floor((t - HR[kk]) * 30), 1, V.frames);
           progEls[kk].outer.style.display = "";
@@ -758,7 +838,7 @@
       g.clearRect(0, 0, 1920, 1080);
       drawResults(t, lo);
       if (h) {
-        const M = MQ[h.k];
+        const M = mq(h.k);
         if (M.page) drawPage(t, h);
         else if (!isText(h.k)) drawHero(t, h);
       }

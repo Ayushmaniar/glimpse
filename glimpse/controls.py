@@ -148,8 +148,7 @@ CONTROLS = {
     "dark": dict(kind="toggle", label="Dark mode", icon="🌙", get=get_dark, set=set_dark),
 }
 # which controls a settings category shows (the category of the top settings result)
-BY_CATEGORY = {"sound": ["volume", "mute"], "display": ["brightness", "dark"], "personalization": ["dark"],
-               "accessibility": ["brightness"]}
+BY_CATEGORY = {"sound": ["volume", "mute"], "display": ["brightness", "dark"], "personalization": ["dark"]}
 
 
 def _state(cid: str, value) -> dict:
