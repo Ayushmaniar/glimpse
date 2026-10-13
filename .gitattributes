@@ -5,3 +5,8 @@
 *.ico binary
 *.mp4 binary
 *.wav binary
+
+# Not needed to run the app: kept out of the ZIP the installer downloads
+docs/launch.mp4 export-ignore
+docs/preview.gif export-ignore
+video/ export-ignore
