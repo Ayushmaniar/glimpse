@@ -9,10 +9,16 @@
       "video_secs": 4.5
     },
     {
-      "q": "glowing blue waves at night"
+      "q": "kayaking under a bridge",
+      "blur_faces": true
     },
     {
       "q": "mountains and a lake"
+    },
+    {
+      "q": "temple",
+      "kind": "scope",
+      "folder": "Pictures/Trips"
     },
     {
       "q": "what is a bayesian network",

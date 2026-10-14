@@ -121,8 +121,8 @@ HOOKS = [
     [83, 81, 78, 76, 74, 78, 81, 78],
     [81, 83, 86, 83, 81, 78, 76, 74],
 ]
-HOOK_OF_SEARCH = [0, 1, 2, 0, 3, 1, 2, 1, 3]
-CARD_START = [3, 2, 0, 3, 2, 0, 3, 0, 2] # pentatonic index a search's cards start from (chord tones)
+HOOK_OF_SEARCH = [0, 1, 2, 0, 2, 3, 1, 2, 1, 3]
+CARD_START = [3, 2, 0, 3, 0, 2, 0, 3, 0, 2] # pentatonic index a search's cards start from (chord tones)
 
 
 def chord_of_bar(i):
@@ -920,6 +920,10 @@ def event_cues(events, stats):
                 place(t, whoosh(dur=0.9, peak=0.3, vel=0.09), post=True)
             else:
                 place(t, whoosh(dur=0.9, peak=0.3, vel=0.4), rev=0.2)
+        elif typ == "hotkey":
+            # Alt+Space from File Explorer in the folder slot: a click and a short air, not a hit
+            enter_cue(t)
+            place(t - 0.15, whoosh(dur=0.5, peak=0.15, vel=0.18), rev=0.2)
         elif typ == "hit":
             if abs(t - HIT_FINALE) < 0.01:
                 big_hit(t, boom_gain=1.2, crash_gain=1.0, rev=0.6)

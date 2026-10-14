@@ -32,11 +32,14 @@ from glimpse import config, embedder  # noqa: E402
 from glimpse.sources import media  # noqa: E402
 from glimpse.sources.images import thumb_name  # noqa: E402
 from eval.run_cutoff_eval import server  # noqa: E402
+import blur_faces  # noqa: E402  (same folder: the photo signature)
 
 OUT = ROOT / "video" / "private" / "media"
 STORY = json.loads((HERE / "story.json").read_text(encoding="utf-8"))
 # queries whose photos must never appear (a JSON list); kept with the private media, not in the repo
 EXCLUDE_PATH = ROOT / "video" / "private" / "exclude.json"
+SKIP_PATH = ROOT / "video" / "private" / "skip.json"
+FOLDERS_PATH = ROOT / "video" / "private" / "folders.json"  # {query: folder under home} for folder searches, if not story.json's   # file names never to show (a clip that is not ours to show)
 PILE_N = 900
 
 
@@ -135,8 +138,9 @@ def pile(db, emb) -> list[dict]:
     return out
 
 
-def ask(port, token, q):
-    req = urllib.request.Request(f"http://127.0.0.1:{port}/api/search", json.dumps({"q": q}).encode(),
+def ask(port, token, q, scope=None):
+    body = {"q": q, **({"scope": scope} if scope else {})}
+    req = urllib.request.Request(f"http://127.0.0.1:{port}/api/search", json.dumps(body).encode(),
                                  {"X-Token": token, "Content-Type": "application/json"})
     return json.load(urllib.request.urlopen(req, timeout=180))
 
@@ -164,6 +168,19 @@ def queries(db, port, token) -> list[dict]:
         entry = {"q": q, "ms": d["ms"], "sections": {s["source"]: len(s["results"]) for s in d["sections"]},
                  "images": [], "video": None, "kind": spec.get("kind", "photo"), "terms": d.get("terms", [])}
         sec = {s["source"]: s["results"] for s in d["sections"]}
+        if spec.get("kind") == "scope":
+            mine = json.loads(FOLDERS_PATH.read_text(encoding="utf-8")) if FOLDERS_PATH.exists() else {}
+            spec = {**spec, "folder": mine.get(q, spec["folder"])}
+            # the same query twice: inside one folder (as when opened from File Explorer), then on the whole PC
+            seen = set()
+            entry["phases"] = [scope_phase(db, port, token, q, os.path.join(os.path.expanduser("~"), spec["folder"]),
+                                           folder, "f", seen=seen),
+                               scope_phase(db, port, token, q, None, folder, "p", seen=seen)]
+            entry["folder"] = spec["folder"]
+            out.append(entry)
+            print(f"{q!r} in {spec['folder']}: {[len(ph['images']) for ph in entry['phases']]} cards, "
+                  f"{[ph['total'] for ph in entry['phases']]} results")
+            continue
         if spec.get("kind") == "rapid":
             # several quick searches in one slot: each keeps only its rows (no Quick Look)
             entry["subs"] = []
@@ -209,6 +226,54 @@ def queries(db, port, token) -> list[dict]:
         out.append(entry)
         print(f"{q!r}: {len(entry['images'])} unique photos, video={'yes' if entry['video'] else 'no'}, {d['ms']} ms")
     return out
+
+
+def scope_phase(db, port, token, q, scope, folder: Path, tag: str, n: int = 8, seen: set | None = None) -> dict:
+    """Cards for one side of a folder search: video moments (a still at the moment, with its time) and photos,
+    in the order the app shows them. The PC-wide side leads with photos and skips files the folder side showed
+    (`seen`, filled as cards are made), so widening visibly brings in the rest of the PC."""
+    # the time shown is a normal one: the best of a few runs (the first warms the folder filter; indexing may be busy)
+    d = min((ask(port, token, q, scope) for _ in range(4)), key=lambda r: r["ms"])
+    cards, sigs = [], []
+    skip = set(json.loads(SKIP_PATH.read_text(encoding="utf-8"))) if SKIP_PATH.exists() else set()
+    seen = set() if seen is None else seen
+    first = seen and "images"
+    for s in sorted(d["sections"], key=lambda s: s["source"] != first):
+        if s["source"] not in ("video", "images"):
+            continue
+        for r in s["results"]:
+            if len(cards) >= n:
+                break
+            num = int(r["id"].split(":")[1])
+            row = db.execute("SELECT path, meta FROM items WHERE id=?", (num,)).fetchone()
+            if not row or not os.path.isfile(row[0]) or (first and row[0] in seen) or os.path.basename(row[0]) in skip:
+                continue
+            seen.add(row[0])
+            dst = folder / f"{tag}{len(cards)}.jpg"
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            badge = None
+            if s["source"] == "video":
+                t = float(json.loads(row[1] or "{}").get("t", 0))
+                subprocess.run([media.ffmpeg(), "-v", "error", "-y", "-ss", f"{t:.2f}", "-i", row[0], "-frames:v", "1",
+                                "-vf", "scale='min(480,iw)':-2", "-q:v", "3", str(dst)], check=False)
+                if not dst.exists():
+                    continue
+                badge = f"{int(t) // 60}:{int(t) % 60:02d}"
+                w, h = Image.open(dst).size
+            else:
+                size = save(row[0], dst, 480)
+                if not size:
+                    continue
+                w, h = size
+            s16 = blur_faces.sig(Image.open(dst))
+            if any(float(s16 @ o) > 0.95 for o in sigs):   # the same shot twice (a copy, a burst)
+                dst.unlink()
+                continue
+            sigs.append(s16)
+            cards.append({"card": f"q/{folder.name}/{dst.name}", "w": w, "h": h, "badge": badge, "source": s["source"]})
+    total = sum(len(s["results"]) for s in d["sections"])
+    return {"scope": os.path.basename(scope) if scope else None, "ms": d["ms"], "total": total, "images": cards,
+            "sections": {s["source"]: len(s["results"]) for s in d["sections"]}}
 
 
 def layout(manifest: dict, clusters: int = 7) -> None:

@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="docs/launch.mp4"><img src="docs/preview.gif" width="820" alt="Glimpse in action"></a><br>
-  <a href="docs/launch.mp4"><b>▶ Watch the 1-minute launch video</b></a>
+  <a href="docs/launch.mp4"><b>▶ Watch the launch video (1:24)</b></a>
 </p>
 
 ---

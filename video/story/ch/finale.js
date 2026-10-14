@@ -16,7 +16,10 @@
   const R = (n, k) => hash(n * 12.9898 + k * 78.233 + 1.7);
 
   let iconC = null, wrap = null, blackEl = null, letters = [], tagEl = null, instEl = null, keysEl = null,
-      keyEls = [], urlEl = null, sweepEl = null;
+      keyEls = [], urlEl = null, sweepEl = null, featEls = [];
+  // the features other launchers don't have, one chip each, landing on 16ths after the URL
+  const FEATURES = [["&#128193;", "Search this folder"], ["&#128444;&#65039;", "Search by image"], ["&#128197;", "\u201cphotos from last summer\u201d"],
+                    ["&#128196;", "Scanned pages"], ["&#127897;&#65039;", "Voice search"], ["&#128273;", "API keys masked"]];
   let burst = [], embers = [], sparks = [], streaks = [];
 
   // one photo: a random 3D direction, a drag-decayed burst, then a slow terminal drift
@@ -174,6 +177,17 @@
       keysEl = wrap.querySelector(".fin-keys");
       keyEls = [...wrap.querySelectorAll(".fin-key")];
       urlEl = wrap.querySelector(".fin-urlrow");
+      const feat = document.createElement("div");
+      feat.style.cssText = "position:absolute;left:0;right:0;top:972px;display:flex;justify-content:center;gap:14px;white-space:nowrap";
+      FEATURES.forEach(([ic, label]) => {
+        const c = document.createElement("div");
+        c.style.cssText = "display:flex;align-items:center;gap:9px;padding:9px 18px;border-radius:999px;background:rgba(255,255,255,.06);" +
+          "box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font:500 21px var(--font);color:#c9cfdb";
+        c.innerHTML = `<span style="font-size:20px">${ic}</span><span>${label}</span>`;
+        feat.appendChild(c);
+        featEls.push(c);
+      });
+      wrap.appendChild(feat);
       sweepEl = wrap.querySelector(".fin-sweep");
 
       // full-screen black for the end (not scaled, sits above the card)
@@ -355,6 +369,7 @@
         el.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,.16), 0 ${(6 * (1 - press)).toFixed(2)}px 0 #090b10, 0 ${(18 - 6 * press).toFixed(1)}px 30px rgba(0,0,0,.5)`;
       });
       textFx(urlEl, t, TF.url, null);
+      featEls.forEach((el, n) => textFx(el, t, TF.url + TL.b(1) + n * TL.BEAT / 4, null, { rise: 16 }));
       const sw = t >= TF.url + 0.4 && t <= TF.url + 1.5;
       sweepEl.style.display = sw ? "" : "none";
       if (sw) sweepEl.style.left = (-34 + 168 * ease.inOut(seg(t, TF.url + 0.4, TF.url + 1.5))).toFixed(2) + "%";

@@ -7,17 +7,33 @@
 (function () {
   // one step per search; a rapid slot expands into its quick searches, which share one caption and have no hero
   const Q = [];
+  // a folder ("scope") slot expands into the folder search and the same search widened to the whole PC by Tab
   TL.QUERIES.forEach((q) => {
     if (!q.subs) { Q.push({ ...q, qk: q.k }); return; }
+    if (q.kind === "scope") {
+      const [a, b] = q.subs;
+      // the folder is in the manifest, which loads after this file runs
+      Q.push({ ...a, kind: "photo", qk: q.k, sub: 0, slot: q, words: [], listen: null, hero: Infinity,
+               get path() { return MEDIA.queries[q.k].folder.split("/"); },
+               get scope() { return this.path[this.path.length - 1]; },
+               caption: q.caption, capFrom: b.enter + TL.b(0.5), capTo: q.end - TL.b(0.5) });
+      Q.push({ ...b, kind: "photo", qk: q.k, sub: 1, slot: q, widen: true, keys: a.keys, words: [], listen: null,
+               hero: Infinity, caption: null });
+      return;
+    }
     q.subs.forEach((sb) => Q.push({ ...sb, kind: "text", qk: q.k, sub: sb.i, rapid: true, words: [], listen: null,
-                                    hero: Infinity, caption: sb.i === 0 ? q.caption : null, capTo: q.end - TL.b(0.5) }));
+                                    hero: Infinity, caption: sb.i === 0 ? q.caption : null,
+                                    capFrom: sb.enter + TL.b(0.5), capTo: q.end - TL.b(0.5) }));
   });
   const N = Q.length, BEAT = TL.BEAT, END = TL.ACT.brain[0];
   // the prepared media of step k (MEDIA is loaded after this file runs, so look it up when needed)
-  const mq = (k) => (Q[k].rapid ? MEDIA.queries[Q[k].qk].subs[Q[k].sub] : MEDIA.queries[Q[k].qk]);
-  const arrive = (k, j) => (Q[k].rapid ? TL.arrive(Q[k].qk, j, Q[k].sub) : TL.arrive(Q[k].qk, j));
-  // a quick search that follows another of the same slot: the panel stays open and the rows swap on Enter
-  const cont = (k) => k > 0 && !!Q[k].rapid && !!Q[k - 1].rapid;
+  const mq = (k) => (Q[k].rapid ? MEDIA.queries[Q[k].qk].subs[Q[k].sub]
+                     : Q[k].slot ? MEDIA.queries[Q[k].qk].phases[Q[k].sub] : MEDIA.queries[Q[k].qk]);
+  const arrive = (k, j) => (Q[k].sub != null ? TL.arrive(Q[k].qk, j, Q[k].sub) : TL.arrive(Q[k].qk, j));
+  // a quick search that follows another of the same slot (or the PC-wide side of a folder search):
+  // the panel stays open and the results swap
+  const cont = (k) => k > 0 && ((!!Q[k].rapid && !!Q[k - 1].rapid) || !!Q[k].widen);
+  const SCOPE = Q.map((q, k) => k).filter((k) => Q[k].slot && Q[k].sub === 0);   // folder searches
   const S = Q.map((q) => q.start), E = Q.map((q) => q.enter), HR = Q.map((q) => q.hero);
   const VK = Q.findIndex((q) => q.voice);                      // the voice search
   const LISTEN = VK >= 0 ? Q[VK].listen : [1e9, 1e9];
@@ -35,7 +51,7 @@
   const HL = "background:rgba(132,169,255,.22);color:#d4e3ff;border-radius:4px;padding:0 2px";
   const QHL = "color:#9dbcff;font-weight:600;text-shadow:0 0 18px rgba(132,169,255,.55);border-bottom:2px solid #84a9ff";
 
-  let dimEl, root, panel, cv, g, shade, wave, bars = [], qSpan, qPh, caret, enterKey, mic, rings = [], chipL, chipT;
+  let scopeEls = {}, dimEl, root, panel, cv, g, shade, wave, bars = [], qSpan, qPh, caret, enterKey, mic, rings = [], chipL, chipT;
   const LAY = [], BY = [], capEls = [], statusEls = [], headEls = [], rowEls = [], pillEls = {}, progEls = {},
         quoteEls = {}, codeEls = {}, bigEls = {}, ansEls = {};
 
@@ -47,6 +63,15 @@
   // when a search's rows leave: at the next search, or (inside a rapid slot) when the next quick search hits Enter
   const leave = (k) => (k < N - 1 && cont(k + 1) ? E[k + 1] : nextS(k));
   const headEnd = (k) => leave(k);
+  // folder slot: the launcher closes as the slot starts and reopens from File Explorer on the hotkey
+  function scopeShow(t) {
+    let v = 1;
+    for (const k of SCOPE) {
+      const s0 = S[k], op = Q[k].slot.open;
+      if (t >= s0 && t < op + 0.3) v = Math.min(v, Math.max(1 - seg(t, s0 + 0.05, s0 + 0.3), ease.out(seg(t, op, op + 0.25))));
+    }
+    return v;
+  }
   // a settings search with a slider: the knob is dragged over beats 1-2.5 of its hero
   const slideT0 = (k) => HR[k] + TL.b(1), slideT1 = (k) => HR[k] + TL.b(2.5);
   const slideU = (k, t) => ease.inOut(seg(t, slideT0(k), slideT1(k)));
@@ -89,7 +114,7 @@
     const items = [], heads = [];
     let y = HEAD_Y, bottom = HEAD_Y, slot = 0;
     kinds.forEach((kind) => {
-      heads.push({ text: kind === "video" ? "Video moments" : "Photos & screenshots", y });
+      heads.push({ text: kind === "video" ? "Video moments" : Q[k].slot ? "Video moments & photos" : "Photos & screenshots", y });
       const gy = y + HEAD_GAP;
       if (kind === "video") {
         items.push({ kind, slot: slot++, body: 0, src: `${M.video.dir}/001.jpg`, badge: M.video.badge,
@@ -98,7 +123,7 @@
       } else {
         for (let i = 0; i < nPh; i++) {
           const r = Math.floor(i / 4), c = i % 4;
-          items.push({ kind, slot: slot++, body: i, src: M.images[i].card,
+          items.push({ kind, slot: slot++, body: i, src: M.images[i].card, badge: M.images[i].badge || null,
                        x: GRID.x + c * (TILE_W + GRID.gap), y: gy + r * (TILE_H + GRID.gap), w: TILE_W, h: TILE_H });
         }
         const rows = Math.ceil(nPh / 4);
@@ -107,7 +132,7 @@
       bottom = y;
       y += 18;
     });
-    const total = Object.values(M.sections).reduce((a, b) => a + b, 0);
+    const total = M.total ?? Object.values(M.sections).reduce((a, b) => a + b, 0);
     return { items, heads, panelH: bottom + 24 - LY, total };
   }
 
@@ -264,7 +289,7 @@
     drawCard(it.src, f.x, f.y, f.w, f.h, f.a, {
       shadow: 0.35 + 0.65 * f.air, blur: 12 + 36 * f.air, dy: 4 + 20 * f.air,
       r: lerp(5, 18, f.ep), bw: isVideo ? 0 : (1 - f.ep) * 0.04 * Math.min(f.w, f.h),
-      badge: isVideo ? it.badge : null,
+      badge: it.badge || null,
     });
   }
 
@@ -277,6 +302,11 @@
         if (t < arr) { drawFlight(t, k, it); continue; }
         const fallT = nx === null ? Infinity : nx + COLLAPSE + it.slot * BEAT / 4;
         let dy = 0, alpha = lo, ang = 0;
+        // before a folder slot the grid just fades: File Explorer comes up where it was
+        if (nx !== null && Q[k + 1].slot && !Q[k].slot) {
+          alpha *= 1 - seg(t, nx, nx + 0.25);
+          if (alpha <= 0.003) continue;
+        }
         if (t >= fallT) {
           const q = seg(t, fallT, fallT + FALL);
           if (q >= 1) continue;
@@ -292,7 +322,7 @@
           g.restore();
         }
         drawCard(it.src, cx, cy, it.w, it.h, ang, {
-          alpha, shadow: 0.9, blur: 26, dy: 10, badge: it.kind === "video" ? it.badge : null,
+          alpha, shadow: 0.9, blur: 26, dy: 10, badge: it.badge || null,
         });
         if (landing) {
           const fl = pulse(t, arr, 0.08) * 0.38 * lo;
@@ -447,7 +477,7 @@
     } else {
       const q = Q[k];
       listening = !!q.listen && t >= q.listen[0] && t < q.listen[1];
-      const clearing = k > 0 && t < S[k] + (q.rapid ? TL.b(0.15) : CLEAR);
+      const clearing = k > 0 && !q.widen && t < S[k] + (q.rapid ? TL.b(0.15) : CLEAR);
       if (clearing) { text = Q[k - 1].q; sel = true; }
       else if (listening) { /* the waveform is shown instead */ }
       else if (q.voice) {
@@ -538,14 +568,89 @@
     }
   }
 
+  // ---- folder slot: File Explorer, the folder / PC chip in the bar, and the keycaps ----------------------------
+  function buildScope() {
+    for (const k of SCOPE) {
+      const M = mq(k), name = esc(Q[k].scope);
+      const places = ["Home", "Desktop", "Documents", "Downloads", "Pictures", "Music", "Videos"];
+      if (!places.includes(Q[k].path[0])) places.push(Q[k].path[0]);
+      const side = places.map((n) =>
+        `<div style="padding:10px 18px;border-radius:8px;${n === Q[k].path[0] ? "background:rgba(255,255,255,.09);color:#fff;font-weight:600" : ""}">${esc(n)}</div>`).join("");
+      const crumbs = Q[k].path.map(esc).join(" &nbsp;&#8250;&nbsp; ");
+      const tiles = M.images.slice(0, 8).map((im, i) =>
+        `<div><div style="position:relative;width:200px;height:124px;border-radius:8px;overflow:hidden;background:#1d2029 url('../private/media/${im.card}') center/cover">` +
+        (im.badge ? `<div style="position:absolute;right:6px;bottom:6px;padding:2px 7px;border-radius:5px;background:rgba(0,0,0,.6);font:600 13px var(--mono);color:#fff">${esc(im.badge)}</div>` : "") +
+        `</div><div style="margin:10px auto 0;height:9px;width:${100 + Math.round(60 * hash(500 + i))}px;border-radius:5px;background:rgba(255,255,255,.13)"></div></div>`).join("");
+      // the window sits under the launcher panel (inserted before it)
+      const win = el("div", "position:absolute;left:300px;top:190px;width:1320px;height:720px;box-sizing:border-box;display:none;border-radius:14px;overflow:hidden;" +
+        "background:#1b1d24;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 50px 120px rgba(0,0,0,.6);font:400 18px/1.2 var(--font);color:#c9cfdb", root,
+        `<div style="height:52px;display:flex;align-items:center;gap:12px;padding:0 20px;background:#22252d;border-bottom:1px solid rgba(255,255,255,.06)">` +
+          `<span style="font-size:20px">&#128193;</span><span style="color:#fff;font-weight:600">${name}</span>` +
+          `<span style="margin-left:auto;letter-spacing:18px;color:#8d96a8">&#8212; &#9633; &#10005;</span></div>` +
+        `<div style="height:56px;display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.06)">` +
+          `<span style="color:#8d96a8">&#8592; &#8594; &#8593;</span>` +
+          `<div style="flex:1;height:34px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;padding:0 14px;color:#c9cfdb;white-space:nowrap;overflow:hidden">&#128421;&#65039; This PC &nbsp;&#8250;&nbsp; ${crumbs}</div>` +
+          `<div style="width:260px;height:34px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;padding:0 14px;color:#6f7787;white-space:nowrap;overflow:hidden">Search ${name}</div></div>` +
+        `<div style="display:flex;height:612px">` +
+          `<div style="width:230px;padding:14px 10px;border-right:1px solid rgba(255,255,255,.06);color:#aab2c3">${side}</div>` +
+          `<div style="flex:1;padding:26px 30px;display:grid;grid-template-columns:repeat(4,200px);gap:26px 34px;align-content:start">${tiles}</div></div>`);
+      const keys = el("div", "position:absolute;left:0;right:0;top:930px;display:none;justify-content:center;gap:14px;font:600 40px var(--font);color:#fff", root,
+        `<span class="kc" style="padding:16px 34px;border-radius:16px;background:#2a2e38;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 7px 0 #0c0e13,0 0 0 3px rgba(132,169,255,.55),0 0 50px rgba(132,169,255,.45)"></span>`);
+      scopeEls[k] = { win, keys, kc: keys.querySelector(".kc") };
+    }
+  }
+  // the chip lives in the search bar, so it is made after the panel
+  function buildScopeChips() {
+    for (const k of SCOPE) {
+      const chip = el("div", "position:absolute;right:" + (LW - rx(BAR.x) - 990) + "px;top:" + (ry(BAR.y) + 24) + "px;height:44px;display:none;align-items:center;gap:10px;" +
+        "padding:0 8px 0 16px;border-radius:12px;background:rgba(132,169,255,.14);box-shadow:inset 0 0 0 1px rgba(132,169,255,.35);font:600 20px var(--font);color:#dfe8ff;white-space:nowrap;transform-origin:100% 50%", panel,
+        `<span class="sc-ico"></span><span class="sc-name"></span>` +
+        `<span class="sc-tab" style="padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.1);box-shadow:inset 0 -2px 0 rgba(0,0,0,.35);font:600 15px var(--font);color:#fff">Tab</span>`);
+      Object.assign(scopeEls[k], { chip, ico: chip.querySelector(".sc-ico"), name: chip.querySelector(".sc-name"), tab: chip.querySelector(".sc-tab") });
+    }
+  }
+  function drawScope(t) {
+    for (const sk of SCOPE) {
+      const se = scopeEls[sk], sl = Q[sk].slot, wk = sk + 1;   // wk: the PC-wide step
+      const op = sl.open, tabT = E[wk], end = sl.end;
+      // the Explorer window: up as the slot starts, sinks behind the launcher once it opens, gone after Tab
+      const wv = seg(t, S[sk], S[sk] + 0.3) * (1 - 0.65 * ease.out(seg(t, op, op + 0.4))) * (1 - seg(t, tabT, tabT + 0.5));
+      se.win.style.display = wv > 0.002 ? "" : "none";
+      se.win.style.opacity = wv.toFixed(3);
+      se.win.style.transform = `translateY(${((1 - ease.out(seg(t, S[sk], S[sk] + 0.4))) * 40).toFixed(1)}px) scale(${(1 - 0.04 * ease.out(seg(t, op, op + 0.4))).toFixed(4)})`;
+      se.win.style.filter = t > op ? `blur(${(6 * ease.out(seg(t, op, op + 0.4))).toFixed(1)}px)` : "none";
+      // the chip: the folder from the hotkey on, This PC after Tab (a quick flip)
+      const cv = seg(t, op + 0.1, op + 0.35) * (1 - seg(t, end - TL.b(0.5), end));
+      se.chip.style.display = cv > 0.002 ? "flex" : "none";
+      se.chip.style.opacity = cv.toFixed(3);
+      const wide = t >= tabT;
+      se.ico.innerHTML = wide ? "&#128421;&#65039;" : "&#128193;";
+      se.name.textContent = wide ? "This PC" : Q[sk].scope;
+      se.chip.style.transform = `scale(${(1 + 0.08 * pulse(t, tabT, 0.18)).toFixed(4)})`;
+      se.tab.style.background = `rgba(132,169,255,${(0.1 + 0.6 * pulse(t, tabT, 0.15)).toFixed(3)})`;
+      // keycaps: Alt + Space at the hotkey, Tab at the widen
+      const kAlt = seg(t, op - 0.2, op) * (1 - seg(t, op + 0.5, op + 0.8));
+      const kTab = seg(t, tabT - 0.2, tabT) * (1 - seg(t, tabT + 0.5, tabT + 0.8));
+      const kv = Math.max(kAlt, kTab);
+      se.keys.style.display = kv > 0.002 ? "flex" : "none";
+      se.keys.style.opacity = kv.toFixed(3);
+      se.kc.textContent = kTab > kAlt ? "Tab" : "Alt + Space";
+      const pt = kTab > kAlt ? tabT : op;
+      se.kc.style.transform = `translateY(${(5 * Math.min(seg(t, pt - 0.05, pt), 1 - seg(t, pt + 0.05, pt + 0.2))).toFixed(1)}px)`;
+    }
+  }
+
   // ---- chapter ----------------------------------------------------------------------------------------------
   CH.add({
     name: "ask", z: 20,
     async init() {
       // Quick Look images are not in the photo preload list
       await Promise.all(Q.map((_, k) => mq(k)).map((M) => (M.page ? load(M.page.src) : null)));
+      // the folder slot's cards are not in the photo preload list either
+      await Promise.all(SCOPE.flatMap((k) => [k, k + 1]).flatMap((k) => mq(k).images.map((im) => load(im.card))));
 
       root = el("div", "position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;display:none", document.getElementById("ui"));
+      buildScope();
 
       // the launcher window: glass panel with the search bar inside
       panel = el("div", `position:absolute;left:${LX}px;top:${LY}px;width:${LW}px;height:${BASE_H}px;box-sizing:border-box;` +
@@ -572,6 +677,7 @@
           '<svg viewBox="0 0 24 24" style="position:relative;width:22px;height:22px"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/>' +
           '<path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>';
       qPh = bar.querySelector(".ss-ph");
+      buildScopeChips();
       qSpan = bar.querySelector(".ss-q span");
       caret = bar.querySelector(".ss-caret");
       wave = bar.querySelector(".ss-wave");
@@ -591,7 +697,8 @@
         LAY[k] = isText(k) ? layoutText(k) : layoutFor(k);
         BY[k] = SIM.bodies.filter((b) => b.role === "result" && b.q === Q[k].qk).sort((a, b) => a.j - b.j);
         const M = mq(k);
-        const label = M.video ? "Video moments &amp; photos" : esc(LAY[k].heads[0].text);
+        const label = Q[k].slot ? (Q[k].scope ? `&#128193; In ${esc(Q[k].scope)}` : "&#128421;&#65039; This PC")
+          : M.video ? "Video moments &amp; photos" : esc(LAY[k].heads.length ? LAY[k].heads[0].text : (M.rows[0] || {}).label);
         statusEls[k] = el("div", `position:absolute;left:${rx(BAR.x)}px;top:${STATUS_Y - LY}px;font:400 18px/24px var(--font);color:#9aa3b5;white-space:nowrap;display:none`, panel,
           `${label} &middot; ${LAY[k].total} results &middot; <span style="font-family:var(--mono);color:#c9cfdb">${M.ms} ms</span>`);
         headEls[k] = LAY[k].heads.map((hd) => el("div", `position:absolute;left:${rx(BAR.x)}px;top:${ry(hd.y)}px;font:600 22px/28px var(--font);color:#9aa3b5;white-space:nowrap;display:none`, panel, esc(hd.text)));
@@ -745,12 +852,15 @@
       const h = heroOf(t);
       const hm = h ? h.m * h.a : 0;
       // intro.js fades its keycap group out over [16.5, S[0]]; the glass fades in over the same window on the same rect
-      const lo = t < S[0] ? seg(t, 16.5, S[0]) : 1 - hm;
+      const lo = (t < S[0] ? seg(t, 16.5, S[0]) : 1 - hm) * scopeShow(t);
+      drawScope(t);
       panel.style.opacity = lo.toFixed(3);
       panel.style.height = panelH(t).toFixed(1) + "px";
 
       // search bar
       const k = kS(t);
+      const ph = k >= 0 && Q[k].scope ? `Search in ${Q[k].scope}\u2026` : "Search your PC\u2026";
+      if (qPh.textContent !== ph) qPh.textContent = ph;
       const listening = barText(t, k);
       const voiceNow = k >= 0 && !!Q[k].voice;
       const rec = voiceNow && listening;
@@ -817,7 +927,7 @@
 
       // hero, captions, video pills and progress
       shade.style.opacity = hm.toFixed(3);
-      for (let i = 0; i < N; i++) if (capEls[i]) textFx(capEls[i], t, Q[i].rapid ? E[i] + TL.b(0.5) : HR[i] + CAP_IN, Q[i].rapid ? Q[i].capTo : capEnd(i));
+      for (let i = 0; i < N; i++) if (capEls[i]) textFx(capEls[i], t, Q[i].capFrom ?? HR[i] + CAP_IN, Q[i].capTo ?? capEnd(i));
       for (const key of Object.keys(pillEls)) { const kk = Number(key); textFx(pillEls[kk], t, HR[kk] + CAP_IN, capEnd(kk)); }
       for (const key of Object.keys(progEls)) {
         const kk = Number(key);

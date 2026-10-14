@@ -7,17 +7,17 @@
   const W = 1920, H = 1080, FPS = 30;
   const b = (n) => n * BEAT;          // time of beat n
   const bar = (n) => n * BAR;         // time of bar n
-  const DURATION = bar(33);           // 79.2 s
+  const DURATION = bar(35);           // 84.0 s
 
   // ---- acts (seconds) --------------------------------------------------------------------------
   const ACT = {
     memories: [0, bar(6)],            // photos rain into a pile, faster and faster
     turn: [bar(6), bar(7)],           // Alt+Space hit, the launcher appears over the pile
-    ask: [bar(7), bar(25)],           // nine real search slots, 2 bars each: 4 photo/video, 3 text, 1 rapid-fire, 1 spoken
-    brain: [bar(25), bar(28)],        // EmbeddingGemma 2: one meaning space, on your PC, private
-    finale: [bar(28), DURATION],      // explosion, logo, tagline, install
+    ask: [bar(7), bar(27)],           // ten real search slots, 2 bars each: 4 photo/video, 1 folder, 2 text, 1 settings, 1 rapid-fire, 1 spoken
+    brain: [bar(27), bar(30)],        // EmbeddingGemma 2: one meaning space, on your PC, private
+    finale: [bar(30), DURATION],      // explosion, logo, tagline, install
   };
-  const HIT = { turn: bar(6), finale: bar(28) };
+  const HIT = { turn: bar(6), finale: bar(30) };
 
   // ---- act 1: the drops that land on beats ------------------------------------------------------
   // [time the card first touches the pile, size class]. 8 big on quarter notes, 8 medium on 8ths, 16 small on 16ths.
@@ -47,13 +47,18 @@
   //   beats 0-2.5  type the query (keystrokes on 16ths, 32nds or faster if it is long) / or speak it
   //   beat 2.5     Enter (on the "and" of 3): the matching photos fly out of the pile into the grid (arrivals on 32nds)
   //   beat 4       the best result opens full screen with a caption, held until the next search starts (2.4 s)
+  // A "scope" slot starts in File Explorer: Alt+Space on beat 1 opens the launcher limited to that folder, the query is
+  // typed and entered as usual (folder results), and Tab on beat 4.5 widens it to the whole PC (second set of results).
   // A "rapid" slot is four quick searches of 2 beats each: type on the "and", Enter on the beat, the top rows stay
   // up while the next one is typed. It has no hero; its caption runs across the whole slot.
   const QUERY_TEXT = [
     { q: "paneer", caption: ["Type a word.", "Every photo of it, instantly."] },
     { q: "birthday", caption: ["Even moments inside videos.", "It opens the clip right where it happens."] },
-    { q: "glowing blue waves at night", caption: ["Describe it like you would to a friend.", "It understands what's in the picture."] },
+    { q: "kayaking under a bridge", caption: ["Describe it like you would to a friend.", "It understands what's in the picture."] },
     { q: "mountains and a lake", caption: ["No tags. No albums. No filenames.", "It just knows what you mean."] },
+    // a folder search: which folder is the film's own choice, kept with the media (prep.py writes it to the manifest)
+    { q: "temple", kind: "scope",
+      caption: ["Search this folder. Or the whole PC.", "Open it from File Explorer. Tab switches."] },
     { q: "what is a bayesian network", kind: "text", caption: ["Documents, by meaning.", "The exact page. The exact sentence."] },
     { q: "code that finds duplicate photos", kind: "text", caption: ["Code, by what it does.", "Even when you forgot what you named it."] },
     { q: "my screen is too dim", kind: "text", caption: ["Not just your files. Your whole PC.", "Say what's wrong. Fix it right there."] },
@@ -69,6 +74,14 @@
     if (!spec.voice) for (let i = 0; i < n; i++) keys.push(s + b(0.25) + i * step);
     const words = [];
     if (spec.voice) spec.q.split(" ").forEach((w, i) => words.push({ w, t: s + b(1.5) + i * BEAT / 4 }));
+    if (spec.kind === "scope") {
+      const st = Math.min(BEAT / 4, b(1) / n);
+      const keys = [...spec.q].map((_, c) => s + b(1.5) + c * st);
+      const subs = [{ q: spec.q, i: 0, start: s, keys, enter: s + b(2.5), scope: true },
+                    { q: spec.q, i: 1, start: s + b(4.5), keys: [], enter: s + b(4.5), scope: null }];
+      return { ...spec, k, start: s, end: s + bar(2), keys, words: [], listen: null, subs, open: s + b(1),
+               enter: subs[0].enter, hero: s + bar(2) };
+    }
     if (spec.kind === "rapid") {
       const subs = spec.subs.map((sq, i) => {
         const s0 = s + i * b(2);
@@ -83,7 +96,7 @@
              enter: s + b(2.5), hero: s + b(4) };
   });
   // results fly in on 32nds after Enter: arrival time of result j of query k (or of quick search i of a rapid slot)
-  const arrive = (k, j, i) => (i != null ? QUERIES[k].subs[i].enter + b(0.125) + j * BEAT / 8
+  const arrive = (k, j, i) => (i != null ? QUERIES[k].subs[i].enter + b(QUERIES[k].kind === "scope" ? 0.25 : 0.125) + j * BEAT / 8
                                          : QUERIES[k].enter + b(0.5) + j * BEAT / 8);
   const MAX_RESULTS = 8;
 
@@ -110,6 +123,15 @@
     const ev = [];
     const add = (t, type, extra) => ev.push({ t: +t.toFixed(4), type, ...(extra || {}) });
     QUERIES.forEach((q) => {
+      if (q.kind === "scope") {
+        add(q.open, "hotkey");
+        q.keys.forEach((t, i) => add(t, "key", { i }));
+        q.subs.forEach((sb) => {
+          add(sb.enter, "enter", { k: q.k, sub: sb.i });
+          for (let j = 0; j < 8; j++) add(arrive(q.k, j, sb.i), "card", { k: q.k, j: j + 2 * sb.i });
+        });
+        return;
+      }
       if (q.subs) {
         q.subs.forEach((sb) => {
           sb.keys.forEach((t, i) => add(t, "key", { i, fast: true }));
