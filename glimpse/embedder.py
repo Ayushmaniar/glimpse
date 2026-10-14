@@ -62,21 +62,8 @@ class Embedder:
         self._turn = threading.Condition()
         self._waiting = [0, 0, 0]  # callers waiting per priority (BULK, FRESH, SEARCH); lower levels yield
         t = time.perf_counter()
-        self.engine, self.backend = None, None
-        for name in ([backend] if backend != "auto" else ["gpu", "cpu"]):
-            try:
-                b = lm.Backend.GPU() if name == "gpu" else lm.Backend.CPU()
-                # Audio on GPU is ~3x faster than CPU here (421 vs 1263 ms per 9.4 s clip).
-                self.engine = lm.EmbeddingEngine(
-                    config.MODEL_PATH, backend=b, vision_backend=b, audio_backend=b,
-                    cache_dir=config.MODEL_CACHE_DIR,
-                )
-                self.backend = name
-                break
-            except Exception as e:  # GPU can fail on machines without WebGPU support
-                log.warning("embedding backend %s failed: %s", name, e)
-        if self.engine is None:
-            raise RuntimeError("Could not start EmbeddingGemma 2 on GPU or CPU")
+        self._want = backend
+        self.engine, self.backend = self._start(backend)
         self._opts = lm.EmbeddingOptions(normalize=True)
         self._img_opts = lm.EmbeddingOptions(
             normalize=True, vision_tokens_per_image=config.get("vision_tokens_per_image"))
@@ -84,7 +71,44 @@ class Embedder:
         self.text("warm up")
         log.info("embedder ready on %s in %.1fs (dim=%d)", self.backend, time.perf_counter() - t, self.dim)
 
+    def _start(self, backend: str):
+        lm = self._lm
+        for name in ([backend] if backend != "auto" else ["gpu", "cpu"]):
+            try:
+                b = lm.Backend.GPU() if name == "gpu" else lm.Backend.CPU()
+                # Audio on GPU is ~3x faster than CPU here (421 vs 1263 ms per 9.4 s clip).
+                return lm.EmbeddingEngine(config.MODEL_PATH, backend=b, vision_backend=b, audio_backend=b,
+                                          cache_dir=config.MODEL_CACHE_DIR), name
+            except Exception as e:  # GPU can fail on machines without WebGPU support
+                log.warning("embedding backend %s failed: %s", name, e)
+        raise RuntimeError("Could not start EmbeddingGemma 2 on GPU or CPU")
+
     # ---- helpers -------------------------------------------------------------------
+    def _run(self, call):
+        """`call(engine)`, with the model lock held. Windows can take the GPU away from a running app (sleep, a
+        locked PC turning the display off, a driver reset); from then on every call fails. So when a call fails
+        and a tiny probe fails too, start a fresh engine and try once more. A call that fails on an engine that
+        still works is the input's fault (a corrupt image, say) and is raised as is."""
+        try:
+            return call(self.engine)
+        except RuntimeError as e:
+            if self._healthy():
+                raise
+            log.warning("embedding engine stopped working (%s); starting a new one", e)
+            with contextlib.suppress(Exception):
+                self.engine.close()
+            t = time.perf_counter()
+            self.engine, self.backend = self._start(self._want)
+            log.info("embedder restarted on %s in %.1fs", self.backend, time.perf_counter() - t)
+            return call(self.engine)
+
+    def _healthy(self) -> bool:
+        try:
+            self.engine.compute_embedding("ok", self._opts)
+            return True
+        except Exception:
+            return False
+
     @contextlib.contextmanager
     def _lock_for(self, urgent: bool):
         """The model runs one call at a time. A search waits for at most one in-flight item, never
@@ -118,7 +142,7 @@ class Embedder:
     def text(self, s: str, urgent: bool = False) -> np.ndarray:
         """Embed one already-formatted string (use QUERY.format(...) or doc(...))."""
         with self._lock_for(urgent):
-            return self._finish(self.engine.compute_embedding(s, self._opts).embedding)
+            return self._finish(self._run(lambda e: e.compute_embedding(s, self._opts)).embedding)
 
     def query(self, q: str, template: str = QUERY) -> np.ndarray:
         return self.text(template.format(q), urgent=True)
@@ -130,7 +154,7 @@ class Embedder:
         for i in range(0, len(items), batch):
             chunk = list(items[i:i + batch])
             with self._lock_for(urgent):
-                rs = self.engine.compute_embedding_batch(chunk, self._opts)
+                rs = self._run(lambda e: e.compute_embedding_batch(chunk, self._opts))
             out.extend(self._finish(r.embedding) for r in rs)
         return np.vstack(out) if out else np.zeros((0, self.dim), np.float32)
 
@@ -138,18 +162,18 @@ class Embedder:
         from litert_lm._messages import ImageBytes, ImageFile
         item = ImageBytes(path_or_bytes) if isinstance(path_or_bytes, bytes) else ImageFile(path_or_bytes)
         with self._lock_for(urgent):
-            return self._finish(self.engine.compute_embedding(item, self._img_opts).embedding)
+            return self._finish(self._run(lambda e: e.compute_embedding(item, self._img_opts)).embedding)
 
     def multi_image(self, items: list) -> np.ndarray:
         """One vector for several images (e.g. frames of a video clip), mean-pooled by the model."""
         with self._lock:
-            return self._finish(self.engine.compute_embedding(items, self._img_opts).embedding)
+            return self._finish(self._run(lambda e: e.compute_embedding(items, self._img_opts)).embedding)
 
     def audio(self, path_or_bytes: str | bytes) -> np.ndarray:
         from litert_lm._messages import AudioBytes, AudioFile
         item = AudioBytes(path_or_bytes) if isinstance(path_or_bytes, bytes) else AudioFile(path_or_bytes)
         with self._lock:
-            return self._finish(self.engine.compute_embedding(item, self._opts).embedding)
+            return self._finish(self._run(lambda e: e.compute_embedding(item, self._opts)).embedding)
 
     def close(self) -> None:
         with self._lock:

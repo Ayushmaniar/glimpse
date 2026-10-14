@@ -4,7 +4,7 @@ Embeddings can't sort by date, so dates are pulled out of the query before it's 
 a window on item timestamps (photo taken / file modified / page visited):
 
   range   explicit window: today, yesterday, this/last week|month|year, past 3 days, 2 weeks ago,
-          in March, March 2025, in 2024, since 2023, on Monday
+          in March, March 2025, in 2024, since 2023, on Monday, last weekend, last summer, winter 2024
   latest  "latest", "newest", "most recent", "recent", "the last screenshot": newest first
   browse  nothing left but generic words ("photos", "my screenshots", ""): list by date, not meaning
 """
@@ -18,6 +18,8 @@ MONTHS = ["january", "february", "march", "april", "may", "june", "july", "augus
           "november", "december"]
 MONTH_RE = r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|" \
            r"oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+SEASONS = {"spring": 3, "summer": 6, "fall": 9, "autumn": 9, "winter": 12}   # first month (northern hemisphere)
+SEASON_RE = r"(spring|summer|fall|autumn|winter)"
 DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 NUM = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "few": 3, "couple of": 2,
        "a few": 3, "a couple of": 2}
@@ -106,6 +108,12 @@ def parse(q: str, now: datetime | None = None) -> TimeQuery:
     take(r"\bday before yesterday\b", lambda m: (today - timedelta(days=2), today - timedelta(days=1),
                                                  "day before yesterday"))
     take(r"\b(yesterday|last night)\b", lambda m: (today - timedelta(days=1), today, "yesterday"))
+    take(r"\b(?:on |over |during )?(?:the )?(this|last|past) weekend\b", lambda m: _weekend(today, m.group(1).lower()))
+    take(rf"\b(?:in |during |from |of |last |this )?{SEASON_RE}[ ,]+((?:19|20)\d{{2}})\b",
+         lambda m: _season(today, m.group(1).lower(), int(m.group(2)), None))
+    take(rf"\b(?:in |during |from |of )?(?:the )?(this|last|past) {SEASON_RE}\b",
+         lambda m: _season(today, m.group(2).lower(), None, m.group(1).lower()))
+    take(rf"\b(?:in|during|from|of) (?:the )?{SEASON_RE}\b", lambda m: _season(today, m.group(1).lower(), None, None))
     take(rf"\b(?:in |over |during )?(?:the )?(?:last|past) {NUM_RE} (day|week|month|year)s?\b",
          lambda m: (now - timedelta(days=_num(m.group(1).lower()) * UNIT_DAYS[m.group(2).lower()]),
                     now + timedelta(days=1), f"past {_num(m.group(1).lower())} {m.group(2).lower()}s"))
@@ -181,6 +189,27 @@ def _month(today: datetime, name: str, year: int | None, since: bool = False):
     start = datetime(year, idx, 1)
     end = today + timedelta(days=1) if since else _month_start(year, idx + 1)
     return start, end, ("since " if since else "") + start.strftime("%B %Y")
+
+
+def _weekend(today: datetime, which: str):
+    """The most recent Saturday-Sunday (today's, during a weekend); "last weekend" during a weekend is the one before."""
+    sat = today - timedelta(days=(today.weekday() - 5) % 7)
+    if which != "this" and today.weekday() >= 5:
+        sat -= timedelta(days=7)
+    return sat, sat + timedelta(days=2), f"weekend of {sat.day} {sat.strftime('%b')}"
+
+
+def _season(today: datetime, name: str, year: int | None, which: str | None):
+    """Three months from the season's first month. Without a year: the most recent one that has started
+    ("last summer" while it is still summer is the year before). Winter runs December to February."""
+    m0 = SEASONS[name]
+    if year is None:
+        year = today.year if datetime(today.year, m0, 1) <= today else today.year - 1
+        if which == "last" and _month_start(year, m0 + 3) > today:
+            year -= 1
+    start, end = datetime(year, m0, 1), _month_start(year, m0 + 3)
+    label = f"winter {year}–{str(year + 1)[2:]}" if m0 == 12 else f"{'autumn' if name == 'autumn' else name} {year}"
+    return start, end, label
 
 
 def _weekday(today: datetime, name: str):

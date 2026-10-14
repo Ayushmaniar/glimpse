@@ -55,9 +55,12 @@ class NamesSource(Source):
         if under:
             like += " AND lower(path) LIKE ? ESCAPE '\\'"
             args.append(_like_prefix(under.lower()))
-        rows = self.store._db.execute(
-            f"SELECT rowid, path, MAX(mtime) FROM files WHERE ({like}) AND status NOT LIKE 'error%' "
-            f"GROUP BY path ORDER BY MAX(mtime) DESC LIMIT 400", args).fetchall()
+        # the store's lock, always: an insert runs a Python function inside SQLite (the fts triggers) while holding
+        # the connection's mutex, so an unlocked read from another thread here deadlocks against it on the GIL
+        with self.store._lock:
+            rows = self.store._db.execute(
+                f"SELECT rowid, path, MAX(mtime) FROM files WHERE ({like}) AND status NOT LIKE 'error%' "
+                f"GROUP BY path ORDER BY MAX(mtime) DESC LIMIT 400", args).fetchall()
         if under:
             known = {os.path.normcase(p) for _, p, _ in rows}
             rows += [(None, p, m) for p, m in _walk_live(under, words) if os.path.normcase(p) not in known]
@@ -103,7 +106,8 @@ class NamesSource(Source):
             with self._live_lock:
                 path = self._live.get(rid)
         else:
-            row = self.store._db.execute("SELECT path FROM files WHERE rowid=?", (int(rid),)).fetchone()
+            with self.store._lock:
+                row = self.store._db.execute("SELECT path FROM files WHERE rowid=?", (int(rid),)).fetchone()
             path = row[0] if row else None
         if not path or not os.path.exists(path):
             return {"ok": False, "error": "file no longer exists"}
