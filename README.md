@@ -158,6 +158,9 @@ git clone https://github.com/Ayushmaniar/glimpse; cd glimpse
 .venv\Scripts\python.exe -m tests.test_ranking            # also: test_scope, test_time, test_fresh, test_secrets, ...
 ```
 
+A source checkout doesn't start with Windows until you tick *Start with Windows* in the tray menu
+(the one-line installer turns it on for you).
+
 The UI is plain HTML/CSS/JS in `glimpse/ui/` (open `index.html` from disk for a mock-data version).
 The launch video is code too: see [`video/`](video/README.md).
 
